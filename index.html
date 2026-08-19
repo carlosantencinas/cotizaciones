@@ -180,6 +180,7 @@
         }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-primary:hover { background: var(--primary-light); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-accent { background: var(--accent); color: #fff; }
         .btn-accent:hover { background: var(--accent-light); }
         .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
@@ -249,6 +250,17 @@
             display: none;
         }
         .login-box .error.show { display: block; }
+        .login-box .forgot-password {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+        .login-box .forgot-password a {
+            color: var(--text-soft);
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .login-box .forgot-password a:hover { text-decoration: underline; }
 
         .panel {
             background: var(--surface);
@@ -538,7 +550,7 @@
             .gantt-duration { width: 40px; font-size: 10px; }
         }
         #app-container { display: none; width: 100%; }
-        #login-container { display: none; }
+        #login-container { display: flex; }
     </style>
 </head>
 <body>
@@ -562,6 +574,9 @@
                 <div class="toggle-link">
                     ¿No tienes cuenta? <a id="goto-register">Regístrate aquí</a>
                 </div>
+                <div class="forgot-password">
+                    <a id="goto-reset">¿Olvidaste tu contraseña?</a>
+                </div>
             </form>
 
             <form id="register-form" action="javascript:void(0)" style="display:none;">
@@ -576,6 +591,17 @@
                 <button type="submit" class="btn btn-primary" id="btn-register">Crear cuenta</button>
                 <div class="toggle-link">
                     ¿Ya tienes cuenta? <a id="goto-login">Inicia sesión aquí</a>
+                </div>
+            </form>
+
+            <form id="reset-form" action="javascript:void(0)" style="display:none;">
+                <div class="field">
+                    <label for="reset-email">Correo electrónico</label>
+                    <input type="email" id="reset-email" placeholder="tu@email.com" required>
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-reset">Enviar correo de recuperación</button>
+                <div class="toggle-link">
+                    <a id="goto-login-reset">Volver al inicio de sesión</a>
                 </div>
             </form>
         </div>
@@ -596,7 +622,7 @@
                 <div class="email" id="user-email">usuario@email.com</div>
                 <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
             </div>
-            <div class="nav-foot mono">RNI 28.106 · v2.0</div>
+            <div class="nav-foot mono">RNI 28.106 · v2.1</div>
         </aside>
         <main id="main"></main>
     </div>
@@ -651,19 +677,29 @@
             } catch (e) { return null; }
         }
 
+        function getUserDataPath(userId, key) {
+            return `users/${userId}/data/${key}`;
+        }
+
         async function initFirebase() {
             const cfg = getSavedFirebaseConfig();
+            
+            // Si no hay configuración, mostrar pantalla de configuración
             if (!cfg) {
                 document.getElementById('login-container').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
-                showLoginError('Configura Firebase primero (ve a la sección Configuración después de iniciar sesión).');
+                showLoginError('⚠️ Configura Firebase primero. Ve a Configuración después de iniciar sesión.');
                 return;
             }
+            
             try {
                 fbApp = firebase.initializeApp(cfg);
                 fbAuth = firebase.auth();
                 fbDb = firebase.firestore();
                 cloudReady = true;
+
+                // Configurar persistencia de sesión
+                await fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
                 fbAuth.onAuthStateChanged(async (user) => {
                     S.user = user;
@@ -671,7 +707,7 @@
                         document.getElementById('login-container').style.display = 'none';
                         document.getElementById('app-container').style.display = 'flex';
                         document.getElementById('user-email').textContent = user.email || 'usuario@email.com';
-                        await loadData();
+                        await loadData(user.uid);
                         render();
                     } else {
                         document.getElementById('login-container').style.display = 'flex';
@@ -687,13 +723,23 @@
             }
         }
 
+        // ============================================================
+        // AUTENTICACIÓN
+        // ============================================================
         async function login(email, password) {
             try {
                 await fbAuth.signInWithEmailAndPassword(email, password);
                 hideLoginError();
                 return true;
             } catch (e) {
-                showLoginError(e.message);
+                let msg = e.message;
+                // Traducir mensajes de error comunes
+                if (e.code === 'auth/user-not-found') msg = 'No existe una cuenta con este correo.';
+                else if (e.code === 'auth/wrong-password') msg = 'Contraseña incorrecta.';
+                else if (e.code === 'auth/invalid-credential') msg = 'Credenciales inválidas. Verifica tus datos.';
+                else if (e.code === 'auth/too-many-requests') msg = 'Demasiados intentos fallidos. Espera un momento.';
+                else if (e.code === 'auth/network-request-failed') msg = 'Error de red. Verifica tu conexión.';
+                showLoginError(msg);
                 return false;
             }
         }
@@ -704,7 +750,26 @@
                 hideLoginError();
                 return true;
             } catch (e) {
-                showLoginError(e.message);
+                let msg = e.message;
+                if (e.code === 'auth/email-already-in-use') msg = 'Este correo ya está registrado.';
+                else if (e.code === 'auth/weak-password') msg = 'La contraseña es demasiado débil. Usa al menos 6 caracteres.';
+                else if (e.code === 'auth/invalid-email') msg = 'Correo electrónico inválido.';
+                showLoginError(msg);
+                return false;
+            }
+        }
+
+        async function resetPassword(email) {
+            try {
+                await fbAuth.sendPasswordResetEmail(email);
+                hideLoginError();
+                toast('📧 Se envió un correo de recuperación a ' + email);
+                return true;
+            } catch (e) {
+                let msg = e.message;
+                if (e.code === 'auth/user-not-found') msg = 'No existe una cuenta con este correo.';
+                else if (e.code === 'auth/invalid-email') msg = 'Correo electrónico inválido.';
+                showLoginError(msg);
                 return false;
             }
         }
@@ -726,26 +791,34 @@
             document.getElementById('login-error').classList.remove('show');
         }
 
-        async function cloudGet(key) {
-            if (!cloudReady || !fbDb) return localStorage.getItem(LS_PREFIX + key);
+        // ============================================================
+        // CRUD - DATOS POR USUARIO
+        // ============================================================
+        async function cloudGet(userId, key) {
+            if (!cloudReady || !fbDb) return localStorage.getItem(LS_PREFIX + userId + '_' + key);
             try {
-                const snap = await fbDb.collection('appdata').doc(key).get();
+                const path = getUserDataPath(userId, key);
+                const snap = await fbDb.collection('users').doc(userId).collection('data').doc(key).get();
                 return snap.exists ? snap.data().value : null;
             } catch (e) {
-                return localStorage.getItem(LS_PREFIX + key);
+                return localStorage.getItem(LS_PREFIX + userId + '_' + key);
             }
         }
 
-        async function cloudSet(key, valueStr) {
-            localStorage.setItem(LS_PREFIX + key, valueStr);
-            if (!cloudReady || !fbDb) return;
+        async function cloudSet(userId, key, valueStr) {
+            // Guardar en localStorage como caché
+            localStorage.setItem(LS_PREFIX + userId + '_' + key, valueStr);
+            
+            if (!cloudReady || !fbDb || !userId) return;
             try {
-                await fbDb.collection('appdata').doc(key).set({ 
-                    value: valueStr, 
-                    updatedAt: Date.now(), 
-                    userId: S.user?.uid || 'anonymous' 
+                await fbDb.collection('users').doc(userId).collection('data').doc(key).set({
+                    value: valueStr,
+                    updatedAt: Date.now(),
+                    userId: userId
                 });
-            } catch (e) { /* silencio */ }
+            } catch (e) {
+                console.warn('Error guardando en Firebase:', e);
+            }
         }
 
         function connectFirebase(configObj) {
@@ -759,37 +832,67 @@
         }
 
         // ============================================================
-        // CRUD
+        // LOAD DATA
         // ============================================================
-        async function loadData() {
-            try { const c = await cloudGet('cotizaciones'); S.cotizaciones = c ? JSON.parse(c) : null; } catch (e) { S.cotizaciones = null; }
-            try { const p = await cloudGet('pagos'); S.pagos = p ? JSON.parse(p) : null; } catch (e) { S.pagos = null; }
-            try { const cl = await cloudGet('clientes'); S.clientes = cl ? JSON.parse(cl) : null; } catch (e) { S.clientes = null; }
-            try { const e = await cloudGet('experiencia'); S.experiencia = e ? JSON.parse(e) : null; } catch (e) { S.experiencia = null; }
-            try { const cfg = await cloudGet('config'); if (cfg) S.config = { ...DEFAULT_CONFIG, ...JSON.parse(cfg) }; } catch (e) {}
+        async function loadData(userId) {
+            try {
+                const c = await cloudGet(userId, 'cotizaciones');
+                S.cotizaciones = c ? JSON.parse(c) : null;
+            } catch (e) { S.cotizaciones = null; }
+            
+            try {
+                const p = await cloudGet(userId, 'pagos');
+                S.pagos = p ? JSON.parse(p) : null;
+            } catch (e) { S.pagos = null; }
+            
+            try {
+                const cl = await cloudGet(userId, 'clientes');
+                S.clientes = cl ? JSON.parse(cl) : null;
+            } catch (e) { S.clientes = null; }
+            
+            try {
+                const e = await cloudGet(userId, 'experiencia');
+                S.experiencia = e ? JSON.parse(e) : null;
+            } catch (e) { S.experiencia = null; }
+            
+            try {
+                const cfg = await cloudGet(userId, 'config');
+                if (cfg) S.config = { ...DEFAULT_CONFIG, ...JSON.parse(cfg) };
+            } catch (e) {}
 
-            if (S.cotizaciones === null) { S.cotizaciones = seedCotizaciones(); await saveCotizaciones(); }
-            if (S.pagos === null) { S.pagos = seedPagos(); await savePagos(); }
-            if (S.clientes === null) { S.clientes = seedClientes(); await saveClientes(); }
-            if (S.experiencia === null) { S.experiencia = seedExperiencia(); await saveExperiencia(); }
+            // Inicializar con datos semilla si no existen
+            if (S.cotizaciones === null) { S.cotizaciones = seedCotizaciones(); await saveCotizaciones(userId); }
+            if (S.pagos === null) { S.pagos = seedPagos(); await savePagos(userId); }
+            if (S.clientes === null) { S.clientes = seedClientes(); await saveClientes(userId); }
+            if (S.experiencia === null) { S.experiencia = seedExperiencia(); await saveExperiencia(userId); }
 
             if (S.config.logo) {
                 document.getElementById('brand-stamp').innerHTML = `<img src="${S.config.logo}" alt="logo">`;
             }
         }
 
-        async function saveCotizaciones() { await cloudSet('cotizaciones', JSON.stringify(S.cotizaciones)); }
-        async function savePagos() { await cloudSet('pagos', JSON.stringify(S.pagos)); }
-        async function saveClientes() { await cloudSet('clientes', JSON.stringify(S.clientes)); }
-        async function saveExperiencia() { await cloudSet('experiencia', JSON.stringify(S.experiencia)); }
-        async function saveConfig() { await cloudSet('config', JSON.stringify(S.config)); }
+        async function saveCotizaciones(userId) { 
+            await cloudSet(userId || S.user?.uid, 'cotizaciones', JSON.stringify(S.cotizaciones)); 
+        }
+        async function savePagos(userId) { 
+            await cloudSet(userId || S.user?.uid, 'pagos', JSON.stringify(S.pagos)); 
+        }
+        async function saveClientes(userId) { 
+            await cloudSet(userId || S.user?.uid, 'clientes', JSON.stringify(S.clientes)); 
+        }
+        async function saveExperiencia(userId) { 
+            await cloudSet(userId || S.user?.uid, 'experiencia', JSON.stringify(S.experiencia)); 
+        }
+        async function saveConfig(userId) { 
+            await cloudSet(userId || S.user?.uid, 'config', JSON.stringify(S.config)); 
+        }
 
         function toast(msg) {
             const t = document.getElementById('toast');
             t.textContent = msg;
             t.classList.add('show');
             clearTimeout(window.__tt);
-            window.__tt = setTimeout(() => t.classList.remove('show'), 2400);
+            window.__tt = setTimeout(() => t.classList.remove('show'), 3000);
         }
 
         // ============================================================
@@ -806,50 +909,21 @@
                 { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Fase I', monto: 670000, cargo: 'Supervisor de obra', desde: '2015-07-27', hasta: '2015-11-20' },
                 { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Diques de Gavión Represas Yana Khakha', monto: 2689305.45, cargo: 'Fiscal de obra', desde: '2015-10-27', hasta: '2017-12-19' },
                 { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'AJUSTE ESTUDIO CONSTRUCCIÓN REPRESA CHIUTARA', monto: 245000, cargo: 'Especialista Hidráulico', desde: '2016-03-22', hasta: '2016-06-25' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS HUACARETA', monto: 508000, cargo: 'Especialista Hidráulico', desde: '2016-07-28', hasta: '2017-03-06' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS YERENDA', monto: 39360, cargo: 'Especialista Hidráulico', desde: '2016-10-26', hasta: '2017-06-04' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sauce Molino', monto: 458089.49, cargo: 'Fiscal de obra', desde: '2016-10-17', hasta: '2016-12-28' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de diques y sistemas de riego MIC Rio Presto', monto: 1645343.96, cargo: 'Fiscal de obra', desde: '2016-10-26', hasta: '2017-05-31' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas San Juan', monto: 356979.6, cargo: 'Fiscal de obra', desde: '2016-11-23', hasta: '2017-03-23' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE MICRORIEGO MOLANI', monto: 120000, cargo: 'Especialista Hidráulico', desde: '2016-12-14', hasta: '2017-05-13' },
-                { id: uid(), entidad: 'Consultora M&R', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE MICRORIEGO PUCA PAMPA', monto: 198000, cargo: 'Especialista Hidrología', desde: '2017-01-01', hasta: '2017-07-01' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sopachuy Cuenca Media', monto: 407906.13, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sopachuy Cuenca Baja', monto: 367198.18, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Obras Hidráulicas MIC Rio San Lucas', monto: 1997886.05, cargo: 'Fiscal de obra', desde: '2017-12-05', hasta: '2018-12-28' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION MEJORAMIENTO CANALES DE RIEGO CULPINA', monto: 195000, cargo: 'Especialista Hidráulico', desde: '2018-03-28', hasta: '2019-12-24' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'EDTP MEJORAMIENTO DE RIEGO ISCU ISCU', monto: 250468.72, cargo: 'Especialista Hidráulico', desde: '2018-06-01', hasta: '2018-09-05' },
-                { id: uid(), entidad: 'Constructora GUTIQUIGAM', objeto: 'CONST. CANAL DE RIEGO SAUSIWAJ', monto: 1292639.82, cargo: 'Especialista Hidráulico', desde: '2018-08-15', hasta: '2019-02-22' },
-                { id: uid(), entidad: 'CONSTICONS SRL', objeto: 'EDTP CONSTRUCCIÓN REPRESA Y RIEGO TURURUMBA', monto: 685229.89, cargo: 'Especialista Hidrología', desde: '2019-03-01', hasta: '2019-11-30' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Potable Achuma Z. Alta', monto: 597784.29, cargo: 'Fiscal de obra', desde: '2019-02-12', hasta: '2019-09-04' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Ampl. Sist. Alcantarillado Sanitario Escana', monto: 739381.5, cargo: 'Fiscal de obra', desde: '2019-02-02', hasta: '2019-08-20' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Agua Potable Chiri', monto: 675081.8, cargo: 'Fiscal de obra', desde: '2019-03-07', hasta: '2019-08-03' },
-                { id: uid(), entidad: 'CCOAS SRL', objeto: 'AJUSTE EDTP CONSTRUCCIÓN PRESA Y RIEGO ATOSILLO', monto: 340000, cargo: 'Especialista Hidráulico', desde: '2019-07-01', hasta: '2019-10-19' },
-                { id: uid(), entidad: 'Asociación Accidental E&M', objeto: 'Supervisión trasvase y planta potabilizadora Sucre', monto: 520000, cargo: 'Especialista Hidráulico', desde: '2021-05-25', hasta: '2021-12-23' },
-                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP MANEJO INTEGRAL MICROCUENCA TARACACHI', monto: 990000, cargo: 'Especialista Hidráulico', desde: '2021-12-27', hasta: '2022-04-26' },
-                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP CONSTRUCCION REPRESA QUEBRADA ONDA', monto: 90000, cargo: 'Especialista Hidráulico', desde: '2021-10-28', hasta: '2022-10-07' },
-                { id: uid(), entidad: 'ROES CONSULTORES', objeto: 'INTERCONEXIONES OBRA DE TOMA Y PTAP COBIJA', monto: 100000, cargo: 'Especialista Hidráulico', desde: '2022-01-02', hasta: '2022-12-20' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Sup. Const. Sistema de Riego Pedernal Monteagudo', monto: 50445314.59, cargo: 'Especialista Hidráulico', desde: '2020-05-15', hasta: '2023-06-08' },
-                { id: uid(), entidad: 'MMAyA UCP PAAP', objeto: 'CONSULTOR ESPECIALISTA HIDROLOGO RIBERALTA', monto: 41000, cargo: 'Especialista Hidrólogo', desde: '2023-08-02', hasta: '2023-09-01' },
-                { id: uid(), entidad: 'Consultora AIPPA', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE RIEGO ISLUCO', monto: 250000, cargo: 'Especialista Hidráulico', desde: '2023-05-23', hasta: '2023-09-25' },
-                { id: uid(), entidad: 'Asociación El Quebracho', objeto: 'Supervisión Construcción Riego Pampas De Padilla', monto: 13073203.72, cargo: 'Especialista Hidráulico', desde: '2022-02-25', hasta: '2024-03-29' },
-                { id: uid(), entidad: 'Asociación El Quebracho', objeto: 'EDTP CONSTRUCCIÓN PRESA RUJERO GRANDE', monto: 1700232.7, cargo: 'Especialista Hidrología', desde: '2023-02-02', hasta: '2024-04-23' },
-                { id: uid(), entidad: 'Asociación del SUR', objeto: 'Supervisión Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS HUACARETA', monto: 508000, cargo: 'Especialista Hidráulico', desde: '2016-07-28', hasta: '2017-03-06' }
             ];
         }
 
         function seedCotizaciones() {
             return [
                 { id: uid(), fecha: '2026-04-24', proyecto: 'REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'MODELACIÓN HIDRAULICA TUBERÍA OBRA DE TOMA Y DESFOGUE', items: [{ id: uid(), actividad: 'Modelación Hidráulica numérica tubería obra de toma y desfogue (WaterCAD)', pu: 250, unidad: 'Bs/escenario', cantidad: 8 }, { id: uid(), actividad: 'Informe Hidráulico', pu: 1000, unidad: 'Bs/informe', cantidad: 1 }], descuento: 500, plazoDias: 6, nota: DEFAULT_CONFIG.defaultNota, entregables: DEFAULT_CONFIG.defaultEntregables, estado: 'aceptada' },
-                { id: uid(), fecha: '2026-08-19', proyecto: 'SISTEMA DE RIEGO REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'INFORME HIDRAULICO DE REVISIÓN DE LA RED DE DISTRIBUCIÓN', items: [{ id: uid(), actividad: 'Revisión modelos WaterCAD de distribución', pu: 3500, unidad: '1 informe', cantidad: 1 }], descuento: 0, plazoDias: 6, nota: DEFAULT_CONFIG.defaultNota, entregables: 'en formato digital:\n- Informe Hidráulico de análisis de la red de distribución.', estado: 'enviada' },
-                { id: uid(), fecha: '2026-08-19', proyecto: 'REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'DISEÑO DISIPADOR DE IMPACTO (DESFOGUE DE FONDO)', items: [{ id: uid(), actividad: 'Diseño y modelación hidráulica cámara disipadora de impacto', pu: 700, unidad: 'bs/estructura', cantidad: 1 }, { id: uid(), actividad: 'Informe técnico hidráulico', pu: 1000, unidad: 'bs/informe', cantidad: 1 }], descuento: 680, plazoDias: 5, nota: DEFAULT_CONFIG.defaultNota, entregables: 'en formato digital:\n- Informe técnico de la modelación hidráulica.', estado: 'aceptada' }
+                { id: uid(), fecha: '2026-08-19', proyecto: 'SISTEMA DE RIEGO REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'INFORME HIDRAULICO DE REVISIÓN DE LA RED DE DISTRIBUCIÓN', items: [{ id: uid(), actividad: 'Revisión modelos WaterCAD de distribución', pu: 3500, unidad: '1 informe', cantidad: 1 }], descuento: 0, plazoDias: 6, nota: DEFAULT_CONFIG.defaultNota, entregables: 'en formato digital:\n- Informe Hidráulico de análisis de la red de distribución.', estado: 'enviada' }
             ];
         }
 
         function seedPagos() {
             return [
                 { id: uid(), fecha: '2026-05-02', cliente: 'Proyecto Botaderos', descripcion: 'Hidrología — La Guardia', monto: 4500, montoPagado: 2250, fechaCompromiso: '2026-04-30', notas: '' },
-                { id: uid(), fecha: '2026-05-02', cliente: 'Proyecto Botaderos', descripcion: 'Hidrología — Poroma', monto: 4500, montoPagado: 2225, fechaCompromiso: '2026-04-30', notas: '' },
-                { id: uid(), fecha: '2026-05-02', cliente: 'Proyecto Botaderos', descripcion: 'Hidrología — Presto', monto: 4500, montoPagado: 0, fechaCompromiso: '2026-04-30', notas: '' }
+                { id: uid(), fecha: '2026-05-02', cliente: 'Proyecto Botaderos', descripcion: 'Hidrología — Poroma', monto: 4500, montoPagado: 2225, fechaCompromiso: '2026-04-30', notas: '' }
             ];
         }
 
@@ -909,7 +983,7 @@
             else if (S.view === 'experiencia') main.innerHTML = viewExperiencia();
             else if (S.view === 'config') main.innerHTML = viewConfig();
 
-            bindViewEvents();
+            bindAppEvents();
         }
 
         // ============================================================
@@ -1034,7 +1108,7 @@
             const rows = [...S.experiencia].sort((a, b) => (b.desde || '').localeCompare(a.desde || ''));
             return `
             <div class="page-head">
-                <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados (últimos 10 años), con diagrama de Gantt y exportación a Excel.</p></div>
+                <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados con exportación a Excel.</p></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-primary" id="btn-new-exp">${ICONS.plus} Agregar proyecto</button>
                     <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar a Excel</button>
@@ -1069,12 +1143,13 @@
         }
 
         function viewConfig() {
+            const hasConfig = getSavedFirebaseConfig() !== null;
             return `
             <div class="page-head"><div><p class="eyebrow">Ajustes</p><h1>Configuración</h1><p>Personaliza tu marca y conecta Firebase.</p></div></div>
             <div class="panel"><div class="panel-body">
                 <div style="margin-bottom:24px;">
                     <h4 style="font-size:13.5px;color:var(--primary);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);">Conexión a Firebase</h4>
-                    ${cloudReady && S.user ? `
+                    ${hasConfig && S.user ? `
                         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                             <span style="display:inline-flex;align-items:center;gap:6px;color:#27AE60;font-weight:500;">● Conectado como ${S.user.email}</span>
                             <button class="btn btn-danger btn-sm" id="btn-disconnect-firebase">Desconectar</button>
@@ -1084,6 +1159,9 @@
                             <textarea id="firebase-config-input" rows="6" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}' style="font-family:'JetBrains Mono',monospace;font-size:12px;"></textarea>
                             <div style="margin-top:8px;display:flex;gap:8px;">
                                 <button class="btn btn-primary" id="btn-connect-firebase">Conectar</button>
+                            </div>
+                            <div style="margin-top:8px;font-size:12px;color:var(--text-soft);">
+                                💡 Obtén esta configuración en Firebase Console → Configuración del proyecto → Tus aplicaciones → Configuración del SDK
                             </div>
                         </div>
                     `}
@@ -1217,7 +1295,7 @@
                 };
                 if (isNew) S.cotizaciones.push(nuevo);
                 else S.cotizaciones = S.cotizaciones.map(x => x.id === nuevo.id ? nuevo : x);
-                await saveCotizaciones();
+                await saveCotizaciones(S.user?.uid);
                 if (nuevo.cliente) {
                     let cli = S.clientes.find(c => c.nombre.toLowerCase() === nuevo.cliente.toLowerCase());
                     if (!cli) { cli = { id: uid(), nombre: nuevo.cliente, proyectos: [] };
@@ -1225,7 +1303,7 @@
                     if (nuevo.proyecto && !cli.proyectos.some(p => p.toLowerCase() === nuevo.proyecto.toLowerCase())) {
                         cli.proyectos.push(nuevo.proyecto);
                     }
-                    await saveClientes();
+                    await saveClientes(S.user?.uid);
                 }
                 close(); render();
                 toast('Cotización guardada.');
@@ -1273,12 +1351,12 @@
                 if (!nuevo.descripcion) { toast('Agrega una descripción.'); return; }
                 if (isNew) S.pagos.push(nuevo);
                 else S.pagos = S.pagos.map(x => x.id === nuevo.id ? nuevo : x);
-                await savePagos();
+                await savePagos(S.user?.uid);
                 if (nuevo.cliente) {
                     let cli = S.clientes.find(c => c.nombre.toLowerCase() === nuevo.cliente.toLowerCase());
                     if (!cli) { cli = { id: uid(), nombre: nuevo.cliente, proyectos: [] };
                         S.clientes.push(cli);
-                        await saveClientes(); }
+                        await saveClientes(S.user?.uid); }
                 }
                 close(); render();
                 toast('Pago guardado.');
@@ -1313,7 +1391,7 @@
                 if (!nuevo.entidad || !nuevo.objeto) { toast('Completa entidad y objeto del proyecto.'); return; }
                 if (isNew) S.experiencia.push(nuevo);
                 else S.experiencia = S.experiencia.map(x => x.id === nuevo.id ? nuevo : x);
-                await saveExperiencia();
+                await saveExperiencia(S.user?.uid);
                 close(); render();
                 toast('Proyecto guardado.');
             };
@@ -1464,55 +1542,106 @@
         }
 
         // ============================================================
-        // EVENT BINDING
+        // LOGIN EVENTS - Inicialización independiente
         // ============================================================
-        function bindViewEvents() {
-            const main = document.getElementById('main');
-
-            // ============================================================
-            // LOGIN - MANEJADORES DE FORMULARIOS
-            // ============================================================
-            
-            // Login con formulario
+        function initLoginEvents() {
+            // Login
             document.getElementById('login-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const email = document.getElementById('login-email').value.trim();
                 const password = document.getElementById('login-password').value;
-                if (!email || !password) { 
-                    showLoginError('Completa todos los campos.'); 
-                    return; 
+                if (!email || !password) {
+                    showLoginError('Completa todos los campos.');
+                    return;
                 }
-                await login(email, password);
+                const btn = document.getElementById('btn-login');
+                btn.disabled = true;
+                btn.textContent = 'Iniciando sesión...';
+                try {
+                    await login(email, password);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Iniciar sesión';
+                }
             });
 
-            // Registro con formulario
+            // Register
             document.getElementById('register-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const email = document.getElementById('register-email').value.trim();
                 const password = document.getElementById('register-password').value;
-                if (!email || !password) { 
-                    showLoginError('Completa todos los campos.'); 
-                    return; 
+                if (!email || !password) {
+                    showLoginError('Completa todos los campos.');
+                    return;
                 }
-                if (password.length < 6) { 
-                    showLoginError('La contraseña debe tener al menos 6 caracteres.'); 
-                    return; 
+                if (password.length < 6) {
+                    showLoginError('La contraseña debe tener al menos 6 caracteres.');
+                    return;
                 }
-                await register(email, password);
+                const btn = document.getElementById('btn-register');
+                btn.disabled = true;
+                btn.textContent = 'Creando cuenta...';
+                try {
+                    await register(email, password);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Crear cuenta';
+                }
             });
 
-            // Toggle entre login y registro
+            // Reset password
+            document.getElementById('reset-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const email = document.getElementById('reset-email').value.trim();
+                if (!email) {
+                    showLoginError('Ingresa tu correo electrónico.');
+                    return;
+                }
+                const btn = document.getElementById('btn-reset');
+                btn.disabled = true;
+                btn.textContent = 'Enviando...';
+                try {
+                    await resetPassword(email);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Enviar correo de recuperación';
+                }
+            });
+
+            // Toggle entre formularios
             document.getElementById('goto-register').onclick = () => {
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('register-form').style.display = 'block';
+                document.getElementById('reset-form').style.display = 'none';
                 hideLoginError();
             };
             document.getElementById('goto-login').onclick = () => {
                 document.getElementById('login-form').style.display = 'block';
                 document.getElementById('register-form').style.display = 'none';
+                document.getElementById('reset-form').style.display = 'none';
                 hideLoginError();
             };
-            
+            document.getElementById('goto-login-reset').onclick = () => {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('register-form').style.display = 'none';
+                document.getElementById('reset-form').style.display = 'none';
+                hideLoginError();
+            };
+            document.getElementById('goto-reset').onclick = () => {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('register-form').style.display = 'none';
+                document.getElementById('reset-form').style.display = 'block';
+                hideLoginError();
+            };
+        }
+
+        // ============================================================
+        // APP EVENTS - Solo para la aplicación (no login)
+        // ============================================================
+        function bindAppEvents() {
+            const main = document.getElementById('main');
+
+            // Logout
             document.getElementById('btn-logout').onclick = logout;
 
             // Cotizaciones
@@ -1528,14 +1657,14 @@
                 copy.estado = 'borrador';
                 copy.fecha = new Date().toISOString().slice(0, 10);
                 S.cotizaciones.push(copy);
-                await saveCotizaciones();
+                await saveCotizaciones(S.user?.uid);
                 render();
                 toast('Cotización duplicada.');
             });
             main.querySelectorAll('[data-del-cot]').forEach(b => b.onclick = async () => {
                 if (!confirm('¿Eliminar esta cotización?')) return;
                 S.cotizaciones = S.cotizaciones.filter(c => c.id !== b.dataset.delCot);
-                await saveCotizaciones();
+                await saveCotizaciones(S.user?.uid);
                 render();
                 toast('Cotización eliminada.');
             });
@@ -1547,7 +1676,7 @@
             main.querySelectorAll('[data-del-pago]').forEach(b => b.onclick = async () => {
                 if (!confirm('¿Eliminar este registro de pago?')) return;
                 S.pagos = S.pagos.filter(p => p.id !== b.dataset.delPago);
-                await savePagos();
+                await savePagos(S.user?.uid);
                 render();
                 toast('Registro eliminado.');
             });
@@ -1560,14 +1689,14 @@
                 let cli = S.clientes.find(c => c.nombre.toLowerCase() === val.toLowerCase());
                 if (!cli) { cli = { id: uid(), nombre: val, proyectos: [] };
                     S.clientes.push(cli);
-                    await saveClientes(); }
+                    await saveClientes(S.user?.uid); }
                 render();
                 toast('Cliente agregado.');
             };
             main.querySelectorAll('[data-del-cliente]').forEach(b => b.onclick = async () => {
                 if (!confirm('¿Eliminar este cliente?')) return;
                 S.clientes = S.clientes.filter(c => c.id !== b.dataset.delCliente);
-                await saveClientes();
+                await saveClientes(S.user?.uid);
                 render();
                 toast('Cliente eliminado.');
             });
@@ -1575,7 +1704,7 @@
                 const [cid, proy] = b.dataset.delProy.split('::');
                 const cli = S.clientes.find(c => c.id === cid);
                 if (cli) { cli.proyectos = cli.proyectos.filter(p => p !== proy);
-                    await saveClientes();
+                    await saveClientes(S.user?.uid);
                     render(); }
             });
             main.querySelectorAll('[data-add-proy]').forEach(b => b.onclick = async () => {
@@ -1586,7 +1715,7 @@
                 const cli = S.clientes.find(c => c.id === cid);
                 if (cli && !cli.proyectos.some(p => p.toLowerCase() === val.toLowerCase())) {
                     cli.proyectos.push(val);
-                    await saveClientes();
+                    await saveClientes(S.user?.uid);
                     render();
                     toast('Proyecto agregado.');
                 }
@@ -1599,7 +1728,7 @@
             main.querySelectorAll('[data-del-exp]').forEach(b => b.onclick = async () => {
                 if (!confirm('¿Eliminar este proyecto?')) return;
                 S.experiencia = S.experiencia.filter(e => e.id !== b.dataset.delExp);
-                await saveExperiencia();
+                await saveExperiencia(S.user?.uid);
                 render();
                 toast('Proyecto eliminado.');
             });
@@ -1637,7 +1766,7 @@
                 S.config.nombre = document.getElementById('cfg-nombre').value.trim();
                 S.config.rni = document.getElementById('cfg-rni').value.trim();
                 if (pendingLogo !== undefined) S.config.logo = pendingLogo;
-                await saveConfig();
+                await saveConfig(S.user?.uid);
                 if (S.config.logo) {
                     document.getElementById('brand-stamp').innerHTML = `<img src="${S.config.logo}" alt="logo">`;
                 }
@@ -1647,8 +1776,12 @@
         }
 
         // ============================================================
-        // INICIO
+        // INICIO - Orden correcto
         // ============================================================
+        // 1. Inicializar eventos del login (siempre disponibles)
+        initLoginEvents();
+        
+        // 2. Inicializar Firebase (que maneja el estado de autenticación)
         initFirebase();
     </script>
 </body>
