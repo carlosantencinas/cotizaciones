@@ -6,7 +6,6 @@
     <title>Ing. Antequera — Suite Profesional</title>
     <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/tu-usuario/tu-repo/main/favicon.ico">
     
-    <!-- Librerías -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
@@ -540,57 +539,49 @@
         }
         #app-container { display: none; width: 100%; }
         #login-container { display: none; }
-        
-        /* Ocultar el error del DOM para campos de contraseña */
-        input[type="password"] {
-            /* Esto ayuda a que el navegador no muestre la advertencia */
-            -webkit-appearance: none;
-            appearance: none;
-        }
     </style>
 </head>
-<body><!-- ===== LOGIN ===== -->
-<div id="login-container" class="login-container">
-    <div class="login-box">
-        <h2>Ing. Antequera</h2>
-        <p class="sub">Inicia sesión para acceder a tu suite profesional</p>
-        <div id="login-error" class="error"></div>
-        
-        <!-- FORMULARIO DE LOGIN -->
-        <form id="login-form" action="javascript:void(0)" onsubmit="handleLogin(event)">
-            <div class="field">
-                <label for="login-email">Correo electrónico</label>
-                <input type="email" id="login-email" placeholder="tu@email.com" required>
-            </div>
-            <div class="field">
-                <label for="login-password">Contraseña</label>
-                <input type="password" id="login-password" placeholder="••••••••" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Iniciar sesión</button>
-            <div class="toggle-link">
-                ¿No tienes cuenta? <a id="goto-register">Regístrate aquí</a>
-            </div>
-        </form>
+<body>
+    <!-- LOGIN -->
+    <div id="login-container" class="login-container">
+        <div class="login-box">
+            <h2>Ing. Antequera</h2>
+            <p class="sub">Inicia sesión para acceder a tu suite profesional</p>
+            <div id="login-error" class="error"></div>
+            
+            <form id="login-form" action="javascript:void(0)">
+                <div class="field">
+                    <label for="login-email">Correo electrónico</label>
+                    <input type="email" id="login-email" placeholder="tu@email.com" required>
+                </div>
+                <div class="field">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-login">Iniciar sesión</button>
+                <div class="toggle-link">
+                    ¿No tienes cuenta? <a id="goto-register">Regístrate aquí</a>
+                </div>
+            </form>
 
-        <!-- FORMULARIO DE REGISTRO -->
-        <form id="register-form" action="javascript:void(0)" onsubmit="handleRegister(event)" style="display:none;">
-            <div class="field">
-                <label for="register-email">Correo electrónico</label>
-                <input type="email" id="register-email" placeholder="tu@email.com" required>
-            </div>
-            <div class="field">
-                <label for="register-password">Contraseña</label>
-                <input type="password" id="register-password" placeholder="•••••••• (mínimo 6 caracteres)" required minlength="6">
-            </div>
-            <button type="submit" class="btn btn-primary">Crear cuenta</button>
-            <div class="toggle-link">
-                ¿Ya tienes cuenta? <a id="goto-login">Inicia sesión aquí</a>
-            </div>
-        </form>
+            <form id="register-form" action="javascript:void(0)" style="display:none;">
+                <div class="field">
+                    <label for="register-email">Correo electrónico</label>
+                    <input type="email" id="register-email" placeholder="tu@email.com" required>
+                </div>
+                <div class="field">
+                    <label for="register-password">Contraseña</label>
+                    <input type="password" id="register-password" placeholder="•••••••• (mínimo 6 caracteres)" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-register">Crear cuenta</button>
+                <div class="toggle-link">
+                    ¿Ya tienes cuenta? <a id="goto-login">Inicia sesión aquí</a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
-    <!-- ===== APP ===== -->
+    <!-- APP -->
     <div id="app-container">
         <aside id="sidebar">
             <div class="brand">
@@ -613,9 +604,9 @@
     <div id="toast"></div>
 
     <script>
-        /* ============================================================
-           CONFIGURACIÓN
-           ============================================================ */
+        // ============================================================
+        // CONFIGURACIÓN
+        // ============================================================
         const LOGO_URL = "https://raw.githubusercontent.com/tu-usuario/tu-repo/main/logo.png";
 
         const DEFAULT_CONFIG = {
@@ -644,9 +635,9 @@
         const fmtDateExcel = (s) => { if (!s) return ''; const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' }); };
         const diffDays = (a, b) => { const d1 = new Date(a + 'T00:00:00'), d2 = new Date(b + 'T00:00:00'); return Math.max(0, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24))); };
 
-        /* ============================================================
-           FIREBASE
-           ============================================================ */
+        // ============================================================
+        // FIREBASE
+        // ============================================================
         const LS_PREFIX = 'hidro_data_';
         let fbApp = null;
         let fbAuth = null;
@@ -767,9 +758,9 @@
             location.reload();
         }
 
-        /* ============================================================
-           CRUD
-           ============================================================ */
+        // ============================================================
+        // CRUD
+        // ============================================================
         async function loadData() {
             try { const c = await cloudGet('cotizaciones'); S.cotizaciones = c ? JSON.parse(c) : null; } catch (e) { S.cotizaciones = null; }
             try { const p = await cloudGet('pagos'); S.pagos = p ? JSON.parse(p) : null; } catch (e) { S.pagos = null; }
@@ -801,9 +792,9 @@
             window.__tt = setTimeout(() => t.classList.remove('show'), 2400);
         }
 
-        /* ============================================================
-           SEED DATA
-           ============================================================ */
+        // ============================================================
+        // SEED DATA
+        // ============================================================
         function seedExperiencia() {
             return [
                 { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
@@ -866,9 +857,9 @@
             return [{ id: uid(), nombre: 'ROES CONSULTORES', proyectos: ['REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', 'SISTEMA DE RIEGO REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA'] }];
         }
 
-        /* ============================================================
-           HELPERS
-           ============================================================ */
+        // ============================================================
+        // HELPERS
+        // ============================================================
         function cotSubtotal(c) { return c.items.reduce((s, it) => s + (Number(it.pu) || 0) * (Number(it.cantidad) || 0), 0); }
         function cotTotal(c) { return cotSubtotal(c) - (Number(c.descuento) || 0); }
         function pagoEstado(p) { const pend = Number(p.monto) - Number(p.montoPagado || 0); if (pend <= 0.001) return 'pagado'; if (Number(p.montoPagado || 0) > 0) return 'parcial'; return 'pendiente'; }
@@ -891,9 +882,9 @@
             empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>'
         };
 
-        /* ============================================================
-           RENDER
-           ============================================================ */
+        // ============================================================
+        // RENDER
+        // ============================================================
         function render() {
             const nav = document.getElementById('nav');
             const items = [
@@ -921,9 +912,9 @@
             bindViewEvents();
         }
 
-        /* ============================================================
-           VIEWS (simplificadas para el ejemplo)
-           ============================================================ */
+        // ============================================================
+        // VIEWS
+        // ============================================================
         function viewDashboard() {
             const cots = S.cotizaciones;
             const pagos = S.pagos;
@@ -1122,9 +1113,9 @@
             </div></div>`;
         }
 
-        /* ============================================================
-           EXPORTAR A EXCEL
-           ============================================================ */
+        // ============================================================
+        // EXPORTAR A EXCEL
+        // ============================================================
         function exportExcel() {
             if (!S.experiencia.length) { toast('No hay datos de experiencia para exportar.'); return; }
             const data = S.experiencia.map(e => ({
@@ -1142,9 +1133,9 @@
             toast('Excel exportado.');
         }
 
-        /* ============================================================
-           MODALES (simplificadas)
-           ============================================================ */
+        // ============================================================
+        // MODALES
+        // ============================================================
         function openCotModal(cot) {
             const isNew = !cot;
             const c = cot ? JSON.parse(JSON.stringify(cot)) : { id: uid(), fecha: new Date().toISOString().slice(0, 10), proyecto: '', cliente: '', titulo: '', items: [{ id: uid(), actividad: '', pu: 0, unidad: '', cantidad: 1 }], descuento: 0, plazoDias: 5, nota: S.config.defaultNota || '', entregables: S.config.defaultEntregables || '', estado: 'borrador' };
@@ -1347,9 +1338,9 @@
             return overlay;
         }
 
-        /* ============================================================
-           PDF EXPORT
-           ============================================================ */
+        // ============================================================
+        // PDF EXPORT
+        // ============================================================
         function exportPDF(c) {
             if (!c) { toast('No se encontró la cotización.'); return; }
             if (!window.jspdf) { toast('La librería de PDF aún está cargando.'); return; }
@@ -1472,54 +1463,56 @@
             toast('PDF generado.');
         }
 
-        /* ============================================================
-           EVENT BINDING
-           ============================================================ */
+        // ============================================================
+        // EVENT BINDING
+        // ============================================================
         function bindViewEvents() {
             const main = document.getElementById('main');
 
-            // LOGIN - Usando eventos click en los botones (sin formularios)
-            document.getElementById('btn-login').onclick = async () => {
+            // ============================================================
+            // LOGIN - MANEJADORES DE FORMULARIOS
+            // ============================================================
+            
+            // Login con formulario
+            document.getElementById('login-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
                 const email = document.getElementById('login-email').value.trim();
                 const password = document.getElementById('login-password').value;
-                if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
+                if (!email || !password) { 
+                    showLoginError('Completa todos los campos.'); 
+                    return; 
+                }
                 await login(email, password);
-            };
+            });
 
-            document.getElementById('btn-register').onclick = async () => {
+            // Registro con formulario
+            document.getElementById('register-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
                 const email = document.getElementById('register-email').value.trim();
                 const password = document.getElementById('register-password').value;
-                if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
-                if (password.length < 6) { showLoginError('La contraseña debe tener al menos 6 caracteres.'); return; }
+                if (!email || !password) { 
+                    showLoginError('Completa todos los campos.'); 
+                    return; 
+                }
+                if (password.length < 6) { 
+                    showLoginError('La contraseña debe tener al menos 6 caracteres.'); 
+                    return; 
+                }
                 await register(email, password);
-            };
-
-            // Enter key para login
-            document.getElementById('login-password').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') document.getElementById('btn-login').click();
-            });
-            document.getElementById('login-email').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') document.getElementById('btn-login').click();
             });
 
-            // Enter key para register
-            document.getElementById('register-password').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') document.getElementById('btn-register').click();
-            });
-            document.getElementById('register-email').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') document.getElementById('btn-register').click();
-            });
-
+            // Toggle entre login y registro
             document.getElementById('goto-register').onclick = () => {
-                document.getElementById('login-form-container').style.display = 'none';
-                document.getElementById('register-form-container').style.display = 'block';
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('register-form').style.display = 'block';
                 hideLoginError();
             };
             document.getElementById('goto-login').onclick = () => {
-                document.getElementById('login-form-container').style.display = 'block';
-                document.getElementById('register-form-container').style.display = 'none';
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('register-form').style.display = 'none';
                 hideLoginError();
             };
+            
             document.getElementById('btn-logout').onclick = logout;
 
             // Cotizaciones
@@ -1653,9 +1646,9 @@
             };
         }
 
-        /* ============================================================
-           INICIO
-           ============================================================ */
+        // ============================================================
+        // INICIO
+        // ============================================================
         initFirebase();
     </script>
 </body>
