@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ing. Antequera — Suite Profesional</title>
-    <!-- Ícono desde GitHub (cambia la URL por la tuya) -->
     <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/tu-usuario/tu-repo/main/favicon.ico">
     
     <!-- Librerías -->
@@ -13,9 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
-    <!-- SheetJS para exportar a Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Fuentes -->
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -49,7 +47,6 @@
         ::selection { background: var(--accent); color: #fff; }
         .mono { font-family: 'JetBrains Mono', monospace; }
 
-        /* ---- SIDEBAR ---- */
         #sidebar {
             width: 240px;
             flex-shrink: 0;
@@ -122,8 +119,27 @@
             font-size: 10.5px;
             color: var(--text-soft);
         }
+        .nav-user {
+            padding: 12px 12px 8px;
+            border-top: 1px solid var(--border);
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-soft);
+        }
+        .nav-user .email { font-weight: 500; color: var(--text); word-break: break-all; }
+        .nav-user .logout-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            color: var(--text-soft);
+            margin-top: 6px;
+            transition: var(--transition);
+        }
+        .nav-user .logout-btn:hover { background: #FDF2F0; border-color: #C0392B; color: #C0392B; }
 
-        /* ---- MAIN ---- */
         main {
             flex: 1;
             padding: 32px 40px 60px;
@@ -175,7 +191,66 @@
         .btn-success { background: #27AE60; color: #fff; }
         .btn-success:hover { background: #219A52; }
 
-        /* ---- PANELES ---- */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100%;
+            padding: 20px;
+            background: var(--bg);
+        }
+        .login-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 40px 36px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: var(--shadow-lg);
+        }
+        .login-box h2 { font-size: 22px; color: var(--primary); margin-bottom: 8px; }
+        .login-box .sub { color: var(--text-soft); font-size: 14px; margin-bottom: 24px; }
+        .login-box .field { margin-bottom: 16px; }
+        .login-box .field label { font-size: 12px; font-weight: 500; color: var(--text); display: block; margin-bottom: 4px; }
+        .login-box .field input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            transition: var(--transition);
+        }
+        .login-box .field input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26,74,92,0.1);
+        }
+        .login-box .btn { width: 100%; justify-content: center; margin-top: 4px; }
+        .login-box .toggle-link {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 13px;
+            color: var(--text-soft);
+        }
+        .login-box .toggle-link a {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .login-box .toggle-link a:hover { text-decoration: underline; }
+        .login-box .error {
+            color: #C0392B;
+            font-size: 13px;
+            padding: 8px 12px;
+            background: #FDF2F0;
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            display: none;
+        }
+        .login-box .error.show { display: block; }
+
         .panel {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -194,7 +269,6 @@
         .panel-h h3 { font-size: 15px; font-weight: 600; color: var(--primary); margin: 0; }
         .panel-body { padding: 18px 20px; }
 
-        /* ---- KPI ---- */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -225,7 +299,6 @@
         .kpi .val { font-size: 24px; font-weight: 700; color: var(--primary); }
         .kpi .sub { font-size: 12px; color: var(--text-soft); margin-top: 4px; }
 
-        /* ---- TABLAS ---- */
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th {
@@ -245,7 +318,7 @@
         .tnum { font-family: 'JetBrains Mono', monospace; }
         .tright { text-align: right; }
 
-        .rowactions { display: flex; gap: 4px; justify-content: flex-end; }
+        .rowactions { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; }
         .iconbtn {
             background: none;
             border: 1px solid var(--border);
@@ -281,7 +354,6 @@
         .empty { padding: 40px 20px; text-align: center; color: var(--text-soft); }
         .empty svg { width: 40px; height: 40px; opacity: 0.3; margin-bottom: 12px; }
 
-        /* ---- GANTT ---- */
         .gantt-container {
             background: var(--gantt-bg);
             border-radius: var(--radius);
@@ -361,7 +433,6 @@
         .gantt-legend .dot.primary { background: var(--gantt-bar); }
         .gantt-legend .dot.light { background: var(--gantt-bar-light); }
 
-        /* ---- MODAL ---- */
         .overlay {
             position: fixed;
             inset: 0;
@@ -431,7 +502,6 @@
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 
-        /* ---- TOAST ---- */
         #toast {
             position: fixed;
             bottom: 24px;
@@ -450,45 +520,92 @@
         }
         #toast.show { opacity: 1; transform: translateY(0); }
 
-        /* ---- RESPONSIVE ---- */
         @media (max-width: 768px) {
             #sidebar { width: 64px; padding: 16px 8px; }
             .brand-txt { display: none; }
             .nav-btn span { display: none; }
             .nav-btn { justify-content: center; padding: 10px; }
             .nav-foot { display: none; }
+            .nav-user { display: none; }
             main { padding: 20px 16px; }
             .row2, .row3 { grid-template-columns: 1fr; }
             .gantt-label { width: 100px; font-size: 11px; }
             .page-head { flex-direction: column; }
+            .login-box { padding: 28px 20px; }
         }
         @media (max-width: 480px) {
             .kpi-grid { grid-template-columns: 1fr 1fr; }
             .gantt-label { width: 80px; }
             .gantt-duration { width: 40px; font-size: 10px; }
         }
+        #app-container { display: none; width: 100%; }
+        #login-container { display: none; }
     </style>
 </head>
 <body>
-    <aside id="sidebar">
-        <div class="brand">
-            <div class="brand-stamp" id="brand-stamp">CAE</div>
-            <div class="brand-txt">
-                <div class="t1">Ing. Antequera</div>
-                <div class="t2">Hidráulica · Hidrología</div>
+    <div id="login-container" class="login-container">
+        <div class="login-box">
+            <h2>Ing. Antequera</h2>
+            <p class="sub">Inicia sesión para acceder a tu suite profesional</p>
+            <div id="login-error" class="error"></div>
+            
+            <div id="login-form">
+                <div class="field">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="login-email" placeholder="tu@email.com">
+                </div>
+                <div class="field">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-password" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary" id="btn-login">Iniciar sesión</button>
+                <div class="toggle-link">
+                    ¿No tienes cuenta? <a id="goto-register">Regístrate aquí</a>
+                </div>
+            </div>
+
+            <div id="register-form" style="display:none;">
+                <div class="field">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="register-email" placeholder="tu@email.com">
+                </div>
+                <div class="field">
+                    <label>Contraseña</label>
+                    <input type="password" id="register-password" placeholder="•••••••• (mínimo 6 caracteres)">
+                </div>
+                <button class="btn btn-primary" id="btn-register">Crear cuenta</button>
+                <div class="toggle-link">
+                    ¿Ya tienes cuenta? <a id="goto-login">Inicia sesión aquí</a>
+                </div>
             </div>
         </div>
-        <nav id="nav"></nav>
-        <div class="nav-foot mono">RNI 28.106 · v2.0</div>
-    </aside>
-    <main id="main"></main>
+    </div>
+
+    <div id="app-container">
+        <aside id="sidebar">
+            <div class="brand">
+                <div class="brand-stamp" id="brand-stamp">CAE</div>
+                <div class="brand-txt">
+                    <div class="t1">Ing. Antequera</div>
+                    <div class="t2">Hidráulica · Hidrología</div>
+                </div>
+            </div>
+            <nav id="nav"></nav>
+            <div class="nav-user">
+                <div class="email" id="user-email">usuario@email.com</div>
+                <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
+            </div>
+            <div class="nav-foot mono">RNI 28.106 · v2.0</div>
+        </aside>
+        <main id="main"></main>
+    </div>
+
     <div id="toast"></div>
 
     <script>
         /* ============================================================
            CONFIGURACIÓN
            ============================================================ */
-        // Cambia esta URL por la de tu logo en GitHub
         const LOGO_URL = "https://raw.githubusercontent.com/tu-usuario/tu-repo/main/logo.png";
         
         const DEFAULT_CONFIG = {
@@ -499,16 +616,15 @@
             defaultEntregables: 'en formato digital:\n- Mapas parámetros morfométricos de la cuenca, pendientes, elevaciones, cobertura, precipitaciones, temperatura, estaciones y ubicación hidrográfica.\n- Informe Hidrológico, y modelo hidrológico.\n- Regulación del embalse.\n- Modelo numérico Vertedero Iber 3.3\n- Modelo numérico Aliviadero Iber 3.3\n- Planos Hidráulicos vertedor y aliviadero.\n- Modelo hidrodinámico Rotura de presa y zonas de riesgo Iber 3.3\n- Mapa de riesgo de inundación'
         };
 
-        /* ============================================================
-           STATE
-           ============================================================ */
         const S = {
             view: 'dashboard',
             cotizaciones: [],
             pagos: [],
             clientes: [],
             experiencia: [],
-            config: { ...DEFAULT_CONFIG }
+            config: { ...DEFAULT_CONFIG },
+            user: null,
+            authReady: false
         };
 
         const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -521,21 +637,10 @@
            FIREBASE
            ============================================================ */
         const LS_PREFIX = 'hidro_data_';
+        let fbApp = null;
+        let fbAuth = null;
+        let fbDb = null;
         let cloudReady = false;
-
-        async function initCloud() {
-            const cfg = getSavedFirebaseConfig();
-            if (!cfg) return;
-            try {
-                const app = firebase.initializeApp(cfg);
-                const auth = firebase.auth();
-                await auth.signInAnonymously();
-                cloudReady = true;
-            } catch (e) {
-                console.error('Firebase init failed', e);
-                cloudReady = false;
-            }
-        }
 
         function getSavedFirebaseConfig() {
             try {
@@ -544,11 +649,85 @@
             } catch (e) { return null; }
         }
 
-        async function cloudGet(key) {
-            if (!cloudReady) return localStorage.getItem(LS_PREFIX + key);
+        async function initFirebase() {
+            const cfg = getSavedFirebaseConfig();
+            if (!cfg) {
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('app-container').style.display = 'none';
+                showLoginError('Configura Firebase primero (ve a la sección Configuración después de iniciar sesión).');
+                return;
+            }
             try {
-                const db = firebase.firestore();
-                const snap = await db.collection('appdata').doc(key).get();
+                fbApp = firebase.initializeApp(cfg);
+                fbAuth = firebase.auth();
+                fbDb = firebase.firestore();
+                cloudReady = true;
+
+                fbAuth.onAuthStateChanged(async (user) => {
+                    S.user = user;
+                    if (user) {
+                        document.getElementById('login-container').style.display = 'none';
+                        document.getElementById('app-container').style.display = 'flex';
+                        document.getElementById('user-email').textContent = user.email || 'usuario@email.com';
+                        await loadData();
+                        render();
+                    } else {
+                        document.getElementById('login-container').style.display = 'flex';
+                        document.getElementById('app-container').style.display = 'none';
+                    }
+                });
+
+            } catch (e) {
+                console.error('Firebase init failed', e);
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('app-container').style.display = 'none';
+                showLoginError('Error al conectar con Firebase. Verifica tu configuración.');
+            }
+        }
+
+        async function login(email, password) {
+            try {
+                await fbAuth.signInWithEmailAndPassword(email, password);
+                hideLoginError();
+                return true;
+            } catch (e) {
+                showLoginError(e.message);
+                return false;
+            }
+        }
+
+        async function register(email, password) {
+            try {
+                await fbAuth.createUserWithEmailAndPassword(email, password);
+                hideLoginError();
+                return true;
+            } catch (e) {
+                showLoginError(e.message);
+                return false;
+            }
+        }
+
+        async function logout() {
+            await fbAuth.signOut();
+            S.user = null;
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'none';
+        }
+
+        function showLoginError(msg) {
+            const el = document.getElementById('login-error');
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function hideLoginError() {
+            document.getElementById('login-error').classList.remove('show');
+        }
+
+        async function cloudGet(key) {
+            if (!cloudReady || !fbDb) return localStorage.getItem(LS_PREFIX + key);
+            try {
+                const snap = await fbDb.collection('appdata').doc(key).get();
                 return snap.exists ? snap.data().value : null;
             } catch (e) {
                 return localStorage.getItem(LS_PREFIX + key);
@@ -557,10 +736,13 @@
 
         async function cloudSet(key, valueStr) {
             localStorage.setItem(LS_PREFIX + key, valueStr);
-            if (!cloudReady) return;
+            if (!cloudReady || !fbDb) return;
             try {
-                const db = firebase.firestore();
-                await db.collection('appdata').doc(key).set({ value: valueStr, updatedAt: Date.now() });
+                await fbDb.collection('appdata').doc(key).set({ 
+                    value: valueStr, 
+                    updatedAt: Date.now(), 
+                    userId: S.user?.uid || 'anonymous' 
+                });
             } catch (e) { /* silencio */ }
         }
 
@@ -577,9 +759,7 @@
         /* ============================================================
            CRUD
            ============================================================ */
-        async function loadAll() {
-            await initCloud();
-
+        async function loadData() {
             try { const c = await cloudGet('cotizaciones'); S.cotizaciones = c ? JSON.parse(c) : null; } catch (e) { S.cotizaciones = null; }
             try { const p = await cloudGet('pagos'); S.pagos = p ? JSON.parse(p) : null; } catch (e) { S.pagos = null; }
             try { const cl = await cloudGet('clientes'); S.clientes = cl ? JSON.parse(cl) : null; } catch (e) { S.clientes = null; }
@@ -591,12 +771,9 @@
             if (S.clientes === null) { S.clientes = seedClientes(); await saveClientes(); }
             if (S.experiencia === null) { S.experiencia = seedExperiencia(); await saveExperiencia(); }
 
-            // Aplicar logo
             if (S.config.logo) {
                 document.getElementById('brand-stamp').innerHTML = `<img src="${S.config.logo}" alt="logo">`;
             }
-
-            render();
         }
 
         async function saveCotizaciones() { await cloudSet('cotizaciones', JSON.stringify(S.cotizaciones)); }
@@ -614,47 +791,47 @@
         }
 
         /* ============================================================
-           SEED DATA (experiencia desde el Excel)
+           SEED DATA
            ============================================================ */
         function seedExperiencia() {
             return [
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS, ATAJADOS Y MICRORIEGOS COMUNIDAD SAN BLAS ALTO', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Proyecto Manejo Integral Cuenca Tarabuco Fase III', monto: 479218.75, cargo: 'Fiscal de obra', desde: '2013-06-05', hasta: '2013-10-29' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO A NIVEL TESA "CONSTRUCCIÓN SISTEMA DE RIEGO COMUNIDAD SAN ANTONIO"', monto: 125000, cargo: 'Especialista Hidráulico', desde: '2014-03-15', hasta: '2014-05-24' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales MIC Parapeti Zona Alta Fase IV', monto: 939415, cargo: 'Fiscal de obra', desde: '2014-05-02', hasta: '2014-09-30' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Tarabuco Fase III', monto: 479218.75, cargo: 'Fiscal de obra', desde: '2013-06-05', hasta: '2013-10-29' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN SISTEMA DE RIEGO SAN ANTONIO', monto: 125000, cargo: 'Especialista Hidráulico', desde: '2014-03-15', hasta: '2014-05-24' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones MIC Parapeti Fase IV', monto: 939415, cargo: 'Fiscal de obra', desde: '2014-05-02', hasta: '2014-09-30' },
                 { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Alcantarillado Sanitario La Tapera', monto: 908211.34, cargo: 'Fiscal de obra', desde: '2015-01-01', hasta: '2015-12-31' },
                 { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Alcantarillado Sanitario Villa Charcas', monto: 4259084.31, cargo: 'Fiscal de obra', desde: '2015-01-01', hasta: '2015-12-31' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones transversales y Longitudinales PMIC Horcas Fase I', monto: 670000, cargo: 'Supervisor de obra', desde: '2015-07-27', hasta: '2015-11-20' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Diques de Gavión y HºCº Proyecto Manejo Integral Cuenca Represas Yana Khakha y Challhua Mayu', monto: 2689305.45, cargo: 'Fiscal de obra', desde: '2015-10-27', hasta: '2017-12-19' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'AJUSTE Y COMPLEMENTACIÓN DEL ESTUDIO DEL PROYECTO CONSTRUCCIÓN REPRESA CHIUTARA (POTOSÍ)', monto: 245000, cargo: 'Especialista Hidráulico', desde: '2016-03-22', hasta: '2016-06-25' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION TECNICA APROVECHAMIENTO DE LOS RECURSOS HIDRICOS EN EL MUNICIPIO DE HUACARETA PAQUETE 4: USO DE FUENTE DE AGUA PARA AFRONTAR LA SEQUIA AGUA BUENA', monto: 508000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2016-07-28', hasta: '2017-03-06' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISIÓN TECNICA APROVECHAMIENTO DE LOS RECURSOS HIDRICOS EN EL MUNICIPIO DE HUACARETA PAQUETE 5: USO DE FUENTE DE AGUA PARA AFRONTAR LA SEQUIA YERENDA', monto: 39360, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2016-10-26', hasta: '2017-06-04' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales, PMIC Horcas Fase II (Comunidad Sauce Molino)', monto: 458089.49, cargo: 'Fiscal de obra', desde: '2016-10-17', hasta: '2016-12-28' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de diques Transversales de Gavión, Atajados y Sistemas de Riego tecnificado con el Proyecto MIC - Rio Presto', monto: 1645343.96, cargo: 'Fiscal de obra', desde: '2016-10-26', hasta: '2017-05-31' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales, PMIC Horcas Fase II (Comunidad San Juan de Horcas)', monto: 356979.6, cargo: 'Fiscal de obra', desde: '2016-11-23', hasta: '2017-03-23' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN CONSTRUCCIÓN SISTEMA DE MICRORIEGO EN LA COMUNIDAD DE MOLANI', monto: 120000, cargo: 'Especialista Hidráulico', desde: '2016-12-14', hasta: '2017-05-13' },
-                { id: uid(), entidad: 'Consultora M&R', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN CONSTRUCCIÓN SISTEMA DE MICRORIEGO COMUNIDAD DE PUCA PAMPA', monto: 198000, cargo: 'Especialista en Hidrología e Hidráulico', desde: '2017-01-01', hasta: '2017-07-01' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones transversales y Longitudinales PMIC Horcas Sopachuy Fase III Zona Cuenca Media', monto: 407906.13, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales PMIC Horcas Sopachuy Fase III Zona Cuenca Baja', monto: 367198.18, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Obras Hidráulicas MIC Rio San Lucas Zona Alta', monto: 1997886.05, cargo: 'Fiscal de obra', desde: '2017-12-05', hasta: '2018-12-28' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISÓN TECNICA MEJORAMIENTO DE LOS CANALES DE RIEGO AREA URBANA CULPINA, CON ENFOQUE DE CAMBIO CLIMATICO', monto: 195000, cargo: 'Especialista Hidráulico', desde: '2018-03-28', hasta: '2019-12-24' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN PROYECTO MEJORAMIENTO DE RIEGO ISCU ISCU, YOCALLA, POTOSI', monto: 250468.72, cargo: 'Especialista Hidráulico', desde: '2018-06-01', hasta: '2018-09-05' },
-                { id: uid(), entidad: 'Constructora y Consultora GUTIQUIGAM', objeto: 'CONST. CANAL DE RIEGO SAUSIWAJ (EDTP)', monto: 1292639.82, cargo: 'Especialista Hidráulico', desde: '2018-08-15', hasta: '2019-02-22' },
-                { id: uid(), entidad: 'Consultora y Constructora CONSTICONS SRL', objeto: 'EDTP CONSTRUCCIÓN REPRESA Y SISTEMA DE RIEGO TURURUMBA', monto: 685229.89, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2019-03-01', hasta: '2019-11-30' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Potable Achuma Z. Alta (Camataqui C. Villa Abecia)', monto: 597784.29, cargo: 'Fiscal de obra', desde: '2019-02-12', hasta: '2019-09-04' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Ampl. Sist. Alcantarillado Sanitario Escana (Yamparáez)', monto: 739381.5, cargo: 'Fiscal de obra', desde: '2019-02-02', hasta: '2019-08-20' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Agua Potable Chiri (Camataqui C. Villa Abecia)', monto: 675081.8, cargo: 'Fiscal de obra', desde: '2019-03-07', hasta: '2019-08-03' },
-                { id: uid(), entidad: 'Constructora y Consultora Acción Socio Ambiental CCOAS SRL', objeto: 'AJUSTE Y COMPLEMENTACIÓN DEL ESTUDIO A NIVEL EDTP CONSTRUCCIÓN PRESA Y RIEGO TECNIFICADO EN ATOSILLO', monto: 340000, cargo: 'Especialista en Diseño Hidráulico e Hidrológico', desde: '2019-07-01', hasta: '2019-10-19' },
-                { id: uid(), entidad: 'Asociación Accidental "E&M"', objeto: 'Supervisión técnica Construcción trasvase y planta potabilizadora para las zonas altas Sucre', monto: 520000, cargo: 'Especialista Hidráulico', desde: '2021-05-25', hasta: '2021-12-23' },
-                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP MANEJO INTEGRAL DE LA MICROCUENCA TARACACHI MUNICIPIO DE ARQUE CBBA', monto: 990000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2021-12-27', hasta: '2022-04-26' },
-                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP CONSTRUCCION REPRESA Y SISTEMA DE RIEGO QUEBRADA ONDA (CKOCHAS)', monto: 90000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2021-10-28', hasta: '2022-10-07' },
-                { id: uid(), entidad: 'ROES CONSULTORES Y ASOCIADOS', objeto: 'CONSTRUCCIÓN INTERCONEXIONES DE LA OBRA DE TOMA Y PTAP PARA EL SISTEMA DE AGUA POTABLE COBIJA', monto: 100000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2022-01-02', hasta: '2022-12-20' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Sup. Tec. Y Ambiental Const. Sistema de Riego Pedernal Monteagudo', monto: 50445314.59, cargo: 'Especialista Hidráulico', desde: '2020-05-15', hasta: '2023-06-08' },
-                { id: uid(), entidad: 'MINISTERIO DE MEDIO AMBIENTE Y AGUA UCP PAAP', objeto: 'CONSULTOR ESPECIALISTA HIDROLOGO PROYECTO CONCLUSIÓN PLANTA DE TRATAMIENTO DE AGUA POTABLE RIBERALTA', monto: 41000, cargo: 'Especialista Hidrólogo', desde: '2023-08-02', hasta: '2023-09-01' },
-                { id: uid(), entidad: 'Consultora AIPPA', objeto: 'Estudio Diseño Técnico de Preinversión Construcción Sistema de Riego Isluco (Ravelo)', monto: 250000, cargo: 'Especialista Hidráulico - Hidrólogo', desde: '2023-05-23', hasta: '2023-09-25' },
-                { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Supervisión Técnica Y Ambiental Construcción Sistema De Riego Pampas De Padilla Lote 2-A', monto: 13073203.72, cargo: 'Especialista Hidráulico - Hidrólogo', desde: '2022-02-25', hasta: '2024-03-29' },
-                { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Estudio de Diseño Técnico de Preinversión (EDTP) "Construcción Presa Rujero Grande"', monto: 1700232.7, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2023-02-02', hasta: '2024-04-23' },
-                { id: uid(), entidad: 'Asociación Accidental del SUR', objeto: 'Servicio de Consultoría de Supervisión para el Proyecto Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista en Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Fase I', monto: 670000, cargo: 'Supervisor de obra', desde: '2015-07-27', hasta: '2015-11-20' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Diques de Gavión Represas Yana Khakha', monto: 2689305.45, cargo: 'Fiscal de obra', desde: '2015-10-27', hasta: '2017-12-19' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'AJUSTE ESTUDIO CONSTRUCCIÓN REPRESA CHIUTARA', monto: 245000, cargo: 'Especialista Hidráulico', desde: '2016-03-22', hasta: '2016-06-25' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS HUACARETA', monto: 508000, cargo: 'Especialista Hidráulico', desde: '2016-07-28', hasta: '2017-03-06' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS YERENDA', monto: 39360, cargo: 'Especialista Hidráulico', desde: '2016-10-26', hasta: '2017-06-04' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sauce Molino', monto: 458089.49, cargo: 'Fiscal de obra', desde: '2016-10-17', hasta: '2016-12-28' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de diques y sistemas de riego MIC Rio Presto', monto: 1645343.96, cargo: 'Fiscal de obra', desde: '2016-10-26', hasta: '2017-05-31' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas San Juan', monto: 356979.6, cargo: 'Fiscal de obra', desde: '2016-11-23', hasta: '2017-03-23' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE MICRORIEGO MOLANI', monto: 120000, cargo: 'Especialista Hidráulico', desde: '2016-12-14', hasta: '2017-05-13' },
+                { id: uid(), entidad: 'Consultora M&R', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE MICRORIEGO PUCA PAMPA', monto: 198000, cargo: 'Especialista Hidrología', desde: '2017-01-01', hasta: '2017-07-01' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sopachuy Cuenca Media', monto: 407906.13, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sopachuy Cuenca Baja', monto: 367198.18, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Obras Hidráulicas MIC Rio San Lucas', monto: 1997886.05, cargo: 'Fiscal de obra', desde: '2017-12-05', hasta: '2018-12-28' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION MEJORAMIENTO CANALES DE RIEGO CULPINA', monto: 195000, cargo: 'Especialista Hidráulico', desde: '2018-03-28', hasta: '2019-12-24' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'EDTP MEJORAMIENTO DE RIEGO ISCU ISCU', monto: 250468.72, cargo: 'Especialista Hidráulico', desde: '2018-06-01', hasta: '2018-09-05' },
+                { id: uid(), entidad: 'Constructora GUTIQUIGAM', objeto: 'CONST. CANAL DE RIEGO SAUSIWAJ', monto: 1292639.82, cargo: 'Especialista Hidráulico', desde: '2018-08-15', hasta: '2019-02-22' },
+                { id: uid(), entidad: 'CONSTICONS SRL', objeto: 'EDTP CONSTRUCCIÓN REPRESA Y RIEGO TURURUMBA', monto: 685229.89, cargo: 'Especialista Hidrología', desde: '2019-03-01', hasta: '2019-11-30' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Potable Achuma Z. Alta', monto: 597784.29, cargo: 'Fiscal de obra', desde: '2019-02-12', hasta: '2019-09-04' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Ampl. Sist. Alcantarillado Sanitario Escana', monto: 739381.5, cargo: 'Fiscal de obra', desde: '2019-02-02', hasta: '2019-08-20' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Agua Potable Chiri', monto: 675081.8, cargo: 'Fiscal de obra', desde: '2019-03-07', hasta: '2019-08-03' },
+                { id: uid(), entidad: 'CCOAS SRL', objeto: 'AJUSTE EDTP CONSTRUCCIÓN PRESA Y RIEGO ATOSILLO', monto: 340000, cargo: 'Especialista Hidráulico', desde: '2019-07-01', hasta: '2019-10-19' },
+                { id: uid(), entidad: 'Asociación Accidental E&M', objeto: 'Supervisión trasvase y planta potabilizadora Sucre', monto: 520000, cargo: 'Especialista Hidráulico', desde: '2021-05-25', hasta: '2021-12-23' },
+                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP MANEJO INTEGRAL MICROCUENCA TARACACHI', monto: 990000, cargo: 'Especialista Hidráulico', desde: '2021-12-27', hasta: '2022-04-26' },
+                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP CONSTRUCCION REPRESA QUEBRADA ONDA', monto: 90000, cargo: 'Especialista Hidráulico', desde: '2021-10-28', hasta: '2022-10-07' },
+                { id: uid(), entidad: 'ROES CONSULTORES', objeto: 'INTERCONEXIONES OBRA DE TOMA Y PTAP COBIJA', monto: 100000, cargo: 'Especialista Hidráulico', desde: '2022-01-02', hasta: '2022-12-20' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Sup. Const. Sistema de Riego Pedernal Monteagudo', monto: 50445314.59, cargo: 'Especialista Hidráulico', desde: '2020-05-15', hasta: '2023-06-08' },
+                { id: uid(), entidad: 'MMAyA UCP PAAP', objeto: 'CONSULTOR ESPECIALISTA HIDROLOGO RIBERALTA', monto: 41000, cargo: 'Especialista Hidrólogo', desde: '2023-08-02', hasta: '2023-09-01' },
+                { id: uid(), entidad: 'Consultora AIPPA', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE RIEGO ISLUCO', monto: 250000, cargo: 'Especialista Hidráulico', desde: '2023-05-23', hasta: '2023-09-25' },
+                { id: uid(), entidad: 'Asociación El Quebracho', objeto: 'Supervisión Construcción Riego Pampas De Padilla', monto: 13073203.72, cargo: 'Especialista Hidráulico', desde: '2022-02-25', hasta: '2024-03-29' },
+                { id: uid(), entidad: 'Asociación El Quebracho', objeto: 'EDTP CONSTRUCCIÓN PRESA RUJERO GRANDE', monto: 1700232.7, cargo: 'Especialista Hidrología', desde: '2023-02-02', hasta: '2024-04-23' },
+                { id: uid(), entidad: 'Asociación del SUR', objeto: 'Supervisión Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
             ];
         }
 
@@ -767,12 +944,12 @@
                 <div class="panel-h"><h3>Monto de experiencia por cargo</h3></div>
                 <div class="panel-body">
                     ${topCargos.length ? topCargos.map(([cargo, monto]) => `
-                        <div class="bar-row" style="display:grid;grid-template-columns:180px 1fr 80px;gap:10px;align-items:center;margin-bottom:10px;font-size:12.5px;">
+                        <div style="display:grid;grid-template-columns:180px 1fr 80px;gap:10px;align-items:center;margin-bottom:10px;font-size:12.5px;">
                             <span style="font-size:12px;">${esc(cargo)}</span>
-                            <div class="bar-track" style="background:#E4DFC9;border-radius:2px;height:9px;overflow:hidden;">
-                                <div class="bar-fill" style="height:100%;border-radius:2px;background:var(--accent);width:${(monto/maxCargo*100)||0}%;"></div>
+                            <div style="background:#E4DFC9;border-radius:2px;height:9px;overflow:hidden;">
+                                <div style="height:100%;border-radius:2px;background:var(--accent);width:${(monto/maxCargo*100)||0}%;"></div>
                             </div>
-                            <span class="amt" style="font-family:'JetBrains Mono';font-size:11.5px;color:var(--text-soft);text-align:right;">${bs(monto)}</span>
+                            <span style="font-family:'JetBrains Mono';font-size:11.5px;color:var(--text-soft);text-align:right;">${bs(monto)}</span>
                         </div>`).join('') : '<p style="color:var(--text-soft);font-size:13px;">Sin datos de experiencia aún.</p>'}
                 </div>
             </div>`;
@@ -853,7 +1030,7 @@
                     <button class="btn btn-accent" id="btn-add-cliente">${ICONS.plus} Agregar</button>
                 </div>
                 ${list.length ? list.map(cl => `
-                    <div class="client-card" style="border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;background:#fff;">
+                    <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;background:#fff;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
                             <span style="font-weight:600;font-size:14.5px;color:var(--primary);">${esc(cl.nombre)}</span>
                             <button class="iconbtn" title="Eliminar cliente" data-del-cliente="${cl.id}">${ICONS.trash}</button>
@@ -871,13 +1048,11 @@
 
         function viewExperiencia() {
             const rows = [...S.experiencia].sort((a, b) => (b.desde || '').localeCompare(a.desde || ''));
-            // Datos para Gantt (últimos 5 años, agrupados por año)
             const now = new Date();
             const fiveYearsAgo = new Date(now);
             fiveYearsAgo.setFullYear(now.getFullYear() - 5);
             const recent = S.experiencia.filter(e => new Date(e.desde + 'T00:00:00') >= fiveYearsAgo).sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
 
-            // Calcular rango de fechas para Gantt
             let minDate = fiveYearsAgo;
             let maxDate = now;
             if (recent.length) {
@@ -897,7 +1072,6 @@
                 </div>
             </div>
 
-            <!-- GANTT -->
             <div class="panel" style="margin-bottom:20px;">
                 <div class="panel-h"><h3>Diagrama de Gantt — Últimos 5 años</h3></div>
                 <div class="panel-body">
@@ -929,7 +1103,6 @@
                 </div>
             </div>
 
-            <!-- TABLA DE EXPERIENCIA -->
             <div class="panel">
                 <div class="panel-h"><h3>Lista completa de proyectos</h3></div>
                 <div class="panel-body">
@@ -962,11 +1135,11 @@
             return `
             <div class="page-head"><div><p class="eyebrow">Ajustes</p><h1>Configuración</h1><p>Personaliza tu marca y conecta Firebase.</p></div></div>
             <div class="panel"><div class="panel-body">
-                <div class="cfg-section" style="margin-bottom:24px;">
+                <div style="margin-bottom:24px;">
                     <h4 style="font-size:13.5px;color:var(--primary);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);">Conexión a Firebase</h4>
-                    ${cloudReady ? `
+                    ${cloudReady && S.user ? `
                         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                            <span style="display:inline-flex;align-items:center;gap:6px;color:#27AE60;font-weight:500;">● Conectado</span>
+                            <span style="display:inline-flex;align-items:center;gap:6px;color:#27AE60;font-weight:500;">● Conectado como ${S.user.email}</span>
                             <button class="btn btn-danger btn-sm" id="btn-disconnect-firebase">Desconectar</button>
                         </div>
                     ` : `
@@ -979,13 +1152,13 @@
                     `}
                 </div>
 
-                <div class="cfg-section" style="margin-bottom:24px;">
+                <div style="margin-bottom:24px;">
                     <h4 style="font-size:13.5px;color:var(--primary);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);">Firma para el PDF</h4>
                     <div class="field"><label>Nombre / firma</label><input id="cfg-nombre" value="${attr(S.config.nombre)}"></div>
                     <div class="field"><label>Credencial (RNI)</label><input id="cfg-rni" value="${attr(S.config.rni)}"></div>
                 </div>
 
-                <div class="cfg-section" style="margin-bottom:24px;">
+                <div style="margin-bottom:24px;">
                     <h4 style="font-size:13.5px;color:var(--primary);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);">Logo</h4>
                     <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
                         <div style="width:64px;height:64px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff;flex-shrink:0;" id="logo-preview">
@@ -1035,7 +1208,7 @@
                 </div>
                 <div class="field"><label>Entregables</label><textarea id="f-entregables" style="min-height:90px;">${esc(c.entregables||'')}</textarea></div>
                 <div class="field"><label>Nota / alcance</label><textarea id="f-nota">${esc(c.nota||'')}</textarea></div>
-                <div class="totals-box" style="border-top:2px solid var(--primary);margin-top:6px;padding-top:12px;">
+                <div style="border-top:2px solid var(--primary);margin-top:6px;padding-top:12px;">
                     <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;color:var(--primary);"><span>Monto final</span><span id="f-total-view">${bs(cotTotal(c))}</span></div>
                 </div>
             `);
@@ -1088,7 +1261,6 @@
                 if (isNew) S.cotizaciones.push(nuevo);
                 else S.cotizaciones = S.cotizaciones.map(x => x.id === nuevo.id ? nuevo : x);
                 await saveCotizaciones();
-                // Guardar cliente/proyecto en memoria
                 if (nuevo.cliente) {
                     let cli = S.clientes.find(c => c.nombre.toLowerCase() === nuevo.cliente.toLowerCase());
                     if (!cli) { cli = { id: uid(), nombre: nuevo.cliente, proyectos: [] };
@@ -1145,7 +1317,6 @@
                 if (isNew) S.pagos.push(nuevo);
                 else S.pagos = S.pagos.map(x => x.id === nuevo.id ? nuevo : x);
                 await savePagos();
-                // Guardar cliente en memoria
                 if (nuevo.cliente) {
                     let cli = S.clientes.find(c => c.nombre.toLowerCase() === nuevo.cliente.toLowerCase());
                     if (!cli) { cli = { id: uid(), nombre: nuevo.cliente, proyectos: [] };
@@ -1211,7 +1382,7 @@
         }
 
         /* ============================================================
-           EXPORTAR A EXCEL (experiencia)
+           EXPORTAR A EXCEL
            ============================================================ */
         function exportExcel() {
             if (!S.experiencia.length) { toast('No hay datos de experiencia para exportar.'); return; }
@@ -1231,10 +1402,165 @@
         }
 
         /* ============================================================
+           PDF EXPORT
+           ============================================================ */
+        function exportPDF(c) {
+            if (!c) { toast('No se encontró la cotización.'); return; }
+            if (!window.jspdf) { toast('La librería de PDF aún está cargando.'); return; }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const pageW = doc.internal.pageSize.getWidth();
+            const blueprint = [31, 78, 95];
+            let y = 18;
+
+            if (S.config.logo) {
+                try { doc.addImage(S.config.logo, 'PNG', 15, 10, 16, 16); } catch (e) {}
+            }
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(17);
+            doc.setTextColor(...blueprint);
+            doc.text('COTIZACIÓN', pageW / 2, y, { align: 'center' });
+            y += 7;
+
+            doc.setFontSize(11);
+            doc.setTextColor(30, 36, 41);
+            const titleLines = doc.splitTextToSize(c.titulo || '', 170);
+            doc.text(titleLines, pageW / 2, y, { align: 'center' });
+            y += titleLines.length * 5.5 + 4;
+
+            doc.setDrawColor(...blueprint);
+            doc.setLineWidth(0.5);
+            doc.line(15, y, pageW - 15, y);
+            y += 7;
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Proyecto:', 15, y);
+            doc.setFont('helvetica', 'normal');
+            const projLines = doc.splitTextToSize(c.proyecto || '—', 150);
+            doc.text(projLines, 38, y);
+            y += Math.max(5, projLines.length * 5);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Cliente:', 15, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(c.cliente || '—', 38, y);
+            y += 8;
+
+            doc.autoTable({
+                startY: y,
+                head: [['Nº', 'Actividad', 'P.U. [Bs]', 'Unidad', 'Cant.', 'Total [Bs]']],
+                body: c.items.map((it, i) => [String(i + 1), it.actividad || '', (Number(it.pu) || 0).toFixed(2), it.unidad || '', String(it.cantidad || 0), ((Number(it.pu) || 0) * (Number(it.cantidad) || 0)).toFixed(2)]),
+                styles: { fontSize: 8.5, cellPadding: 2.4, valign: 'top', textColor: [30, 36, 41] },
+                headStyles: { fillColor: blueprint, textColor: 255, fontStyle: 'bold', fontSize: 8.5 },
+                alternateRowStyles: { fillColor: [247, 245, 236] },
+                columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 92 }, 2: { cellWidth: 20, halign: 'right' }, 3: { cellWidth: 28 }, 4: { cellWidth: 13, halign: 'center' }, 5: { cellWidth: 19, halign: 'right' } },
+                margin: { left: 15, right: 15 }
+            });
+            y = doc.lastAutoTable.finalY + 8;
+
+            const subtotal = cotSubtotal(c);
+            const total = cotTotal(c);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(60, 66, 71);
+            doc.text(`Subtotal [Bs]: ${subtotal.toFixed(2)}`, pageW - 15, y, { align: 'right' });
+            y += 6;
+            if (Number(c.descuento) > 0) {
+                doc.text(`Descuento / anticipo [Bs]: ${Number(c.descuento).toFixed(2)}`, pageW - 15, y, { align: 'right' });
+                y += 6;
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(...blueprint);
+            doc.text(`Monto final [Bs]: ${total.toFixed(2)}`, pageW - 15, y, { align: 'right' });
+            y += 9;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(30, 36, 41);
+            doc.text(`Plazo a partir del anticipo: ${c.plazoDias||0} días`, 15, y);
+            y += 9;
+
+            if (c.entregables) {
+                if (y > 245) { doc.addPage();
+                    y = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setTextColor(30, 36, 41);
+                doc.text('Producto a presentar', 15, y);
+                y += 5;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(60, 66, 71);
+                const delLines = doc.splitTextToSize(c.entregables, pageW - 30);
+                doc.text(delLines, 15, y);
+                y += delLines.length * 3.9 + 9;
+            }
+
+            if (c.nota) {
+                if (y > 255) { doc.addPage();
+                    y = 20; }
+                doc.setFontSize(8);
+                doc.setTextColor(100, 105, 110);
+                const noteLines = doc.splitTextToSize(`Nota: ${c.nota}`, pageW - 30);
+                doc.text(noteLines, 15, y);
+                y += noteLines.length * 3.8 + 10;
+            }
+
+            if (y > 255) { doc.addPage();
+                y = 20; }
+            doc.setFontSize(9);
+            doc.setTextColor(30, 36, 41);
+            doc.text(`Fecha: ${fmtDate(c.fecha)}`, 15, y);
+            y += 16;
+            doc.setFont('helvetica', 'bold');
+            doc.text(S.config.nombre || '', 15, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text(S.config.rni || '', 15, y);
+
+            const safeName = (c.proyecto || 'cotizacion').replace(/[^a-z0-9]+/gi, '_').slice(0, 40);
+            doc.save(`Cotizacion_${safeName}_${c.fecha}.pdf`);
+            toast('PDF generado.');
+        }
+
+        /* ============================================================
            EVENT BINDING
            ============================================================ */
         function bindViewEvents() {
             const main = document.getElementById('main');
+
+            // LOGIN / REGISTER
+            document.getElementById('btn-login').onclick = async () => {
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+                if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
+                await login(email, password);
+            };
+            document.getElementById('btn-register').onclick = async () => {
+                const email = document.getElementById('register-email').value.trim();
+                const password = document.getElementById('register-password').value;
+                if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
+                if (password.length < 6) { showLoginError('La contraseña debe tener al menos 6 caracteres.'); return; }
+                await register(email, password);
+            };
+            document.getElementById('goto-register').onclick = () => {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('register-form').style.display = 'block';
+                hideLoginError();
+            };
+            document.getElementById('goto-login').onclick = () => {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('register-form').style.display = 'none';
+                hideLoginError();
+            };
+            document.getElementById('btn-logout').onclick = logout;
+
+            // Enter key para login/register
+            document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-login').click(); });
+            document.getElementById('register-password').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-register').click(); });
 
             // Cotizaciones
             const btnNew = document.getElementById('btn-new-cot');
@@ -1368,134 +1694,10 @@
         }
 
         /* ============================================================
-           PDF EXPORT (cotizaciones)
-           ============================================================ */
-        function exportPDF(c) {
-            if (!c) { toast('No se encontró la cotización.'); return; }
-            if (!window.jspdf) { toast('La librería de PDF aún está cargando.'); return; }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-            const pageW = doc.internal.pageSize.getWidth();
-            const blueprint = [31, 78, 95];
-            let y = 18;
-
-            if (S.config.logo) {
-                try { doc.addImage(S.config.logo, 'PNG', 15, 10, 16, 16); } catch (e) {}
-            }
-
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(17);
-            doc.setTextColor(...blueprint);
-            doc.text('COTIZACIÓN', pageW / 2, y, { align: 'center' });
-            y += 7;
-
-            doc.setFontSize(11);
-            doc.setTextColor(30, 36, 41);
-            const titleLines = doc.splitTextToSize(c.titulo || '', 170);
-            doc.text(titleLines, pageW / 2, y, { align: 'center' });
-            y += titleLines.length * 5.5 + 4;
-
-            doc.setDrawColor(...blueprint);
-            doc.setLineWidth(0.5);
-            doc.line(15, y, pageW - 15, y);
-            y += 7;
-
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Proyecto:', 15, y);
-            doc.setFont('helvetica', 'normal');
-            const projLines = doc.splitTextToSize(c.proyecto || '—', 150);
-            doc.text(projLines, 38, y);
-            y += Math.max(5, projLines.length * 5);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Cliente:', 15, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(c.cliente || '—', 38, y);
-            y += 8;
-
-            doc.autoTable({
-                startY: y,
-                head: [['Nº', 'Actividad', 'P.U. [Bs]', 'Unidad', 'Cant.', 'Total [Bs]']],
-                body: c.items.map((it, i) => [String(i + 1), it.actividad || '', (Number(it.pu) || 0).toFixed(2), it.unidad || '', String(it.cantidad || 0), ((Number(it.pu) || 0) * (Number(it.cantidad) || 0)).toFixed(2)]),
-                styles: { fontSize: 8.5, cellPadding: 2.4, valign: 'top', textColor: [30, 36, 41] },
-                headStyles: { fillColor: blueprint, textColor: 255, fontStyle: 'bold', fontSize: 8.5 },
-                alternateRowStyles: { fillColor: [247, 245, 236] },
-                columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 92 }, 2: { cellWidth: 20, halign: 'right' }, 3: { cellWidth: 28 }, 4: { cellWidth: 13, halign: 'center' }, 5: { cellWidth: 19, halign: 'right' } },
-                margin: { left: 15, right: 15 }
-            });
-            y = doc.lastAutoTable.finalY + 8;
-
-            const subtotal = cotSubtotal(c);
-            const total = cotTotal(c);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(60, 66, 71);
-            doc.text(`Subtotal [Bs]: ${subtotal.toFixed(2)}`, pageW - 15, y, { align: 'right' });
-            y += 6;
-            if (Number(c.descuento) > 0) {
-                doc.text(`Descuento / anticipo [Bs]: ${Number(c.descuento).toFixed(2)}`, pageW - 15, y, { align: 'right' });
-                y += 6;
-            }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(...blueprint);
-            doc.text(`Monto final [Bs]: ${total.toFixed(2)}`, pageW - 15, y, { align: 'right' });
-            y += 9;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(30, 36, 41);
-            doc.text(`Plazo a partir del anticipo: ${c.plazoDias||0} días`, 15, y);
-            y += 9;
-
-            if (c.entregables) {
-                if (y > 245) { doc.addPage();
-                    y = 20; }
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9);
-                doc.setTextColor(30, 36, 41);
-                doc.text('Producto a presentar', 15, y);
-                y += 5;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8.5);
-                doc.setTextColor(60, 66, 71);
-                const delLines = doc.splitTextToSize(c.entregables, pageW - 30);
-                doc.text(delLines, 15, y);
-                y += delLines.length * 3.9 + 9;
-            }
-
-            if (c.nota) {
-                if (y > 255) { doc.addPage();
-                    y = 20; }
-                doc.setFontSize(8);
-                doc.setTextColor(100, 105, 110);
-                const noteLines = doc.splitTextToSize(`Nota: ${c.nota}`, pageW - 30);
-                doc.text(noteLines, 15, y);
-                y += noteLines.length * 3.8 + 10;
-            }
-
-            if (y > 255) { doc.addPage();
-                y = 20; }
-            doc.setFontSize(9);
-            doc.setTextColor(30, 36, 41);
-            doc.text(`Fecha: ${fmtDate(c.fecha)}`, 15, y);
-            y += 16;
-            doc.setFont('helvetica', 'bold');
-            doc.text(S.config.nombre || '', 15, y);
-            y += 5;
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            doc.text(S.config.rni || '', 15, y);
-
-            const safeName = (c.proyecto || 'cotizacion').replace(/[^a-z0-9]+/gi, '_').slice(0, 40);
-            doc.save(`Cotizacion_${safeName}_${c.fecha}.pdf`);
-            toast('PDF generado.');
-        }
-
-        /* ============================================================
            INICIO
            ============================================================ */
-        loadAll();
+        // Inicializar Firebase y cargar datos
+        initFirebase();
     </script>
 </body>
 </html>
