@@ -540,49 +540,58 @@
         }
         #app-container { display: none; width: 100%; }
         #login-container { display: none; }
+        
+        /* Ocultar el error del DOM para campos de contraseña */
+        input[type="password"] {
+            /* Esto ayuda a que el navegador no muestre la advertencia */
+            -webkit-appearance: none;
+            appearance: none;
+        }
     </style>
 </head>
 <body>
+    <!-- ===== LOGIN ===== -->
     <div id="login-container" class="login-container">
         <div class="login-box">
             <h2>Ing. Antequera</h2>
             <p class="sub">Inicia sesión para acceder a tu suite profesional</p>
             <div id="login-error" class="error"></div>
             
-            <!-- FORMULARIO DE LOGIN -->
-            <form id="login-form" onsubmit="return false;">
+            <!-- FORMULARIO DE LOGIN - SIEMPRE VISIBLE -->
+            <div id="login-form-container">
                 <div class="field">
-                    <label>Correo electrónico</label>
-                    <input type="email" id="login-email" placeholder="tu@email.com" required>
+                    <label for="login-email">Correo electrónico</label>
+                    <input type="email" id="login-email" placeholder="tu@email.com">
                 </div>
                 <div class="field">
-                    <label>Contraseña</label>
-                    <input type="password" id="login-password" placeholder="••••••••" required>
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" placeholder="••••••••">
                 </div>
-                <button type="submit" class="btn btn-primary" id="btn-login">Iniciar sesión</button>
+                <button class="btn btn-primary" id="btn-login">Iniciar sesión</button>
                 <div class="toggle-link">
                     ¿No tienes cuenta? <a id="goto-register">Regístrate aquí</a>
                 </div>
-            </form>
+            </div>
 
-            <!-- FORMULARIO DE REGISTRO -->
-            <form id="register-form" style="display:none;" onsubmit="return false;">
+            <!-- FORMULARIO DE REGISTRO - OCULTO POR DEFECTO -->
+            <div id="register-form-container" style="display:none;">
                 <div class="field">
-                    <label>Correo electrónico</label>
-                    <input type="email" id="register-email" placeholder="tu@email.com" required>
+                    <label for="register-email">Correo electrónico</label>
+                    <input type="email" id="register-email" placeholder="tu@email.com">
                 </div>
                 <div class="field">
-                    <label>Contraseña</label>
-                    <input type="password" id="register-password" placeholder="•••••••• (mínimo 6 caracteres)" required minlength="6">
+                    <label for="register-password">Contraseña</label>
+                    <input type="password" id="register-password" placeholder="•••••••• (mínimo 6 caracteres)">
                 </div>
-                <button type="submit" class="btn btn-primary" id="btn-register">Crear cuenta</button>
+                <button class="btn btn-primary" id="btn-register">Crear cuenta</button>
                 <div class="toggle-link">
                     ¿Ya tienes cuenta? <a id="goto-login">Inicia sesión aquí</a>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
+    <!-- ===== APP ===== -->
     <div id="app-container">
         <aside id="sidebar">
             <div class="brand">
@@ -794,47 +803,47 @@
         }
 
         /* ============================================================
-           SEED DATA (datos de experiencia)
+           SEED DATA
            ============================================================ */
         function seedExperiencia() {
             return [
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS, ATAJADOS Y MICRORIEGOS COMUNIDAD SAN BLAS ALTO', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Proyecto Manejo Integral Cuenca Tarabuco Fase III', monto: 479218.75, cargo: 'Fiscal de obra', desde: '2013-06-05', hasta: '2013-10-29' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO A NIVEL TESA "CONSTRUCCIÓN SISTEMA DE RIEGO COMUNIDAD SAN ANTONIO"', monto: 125000, cargo: 'Especialista Hidráulico', desde: '2014-03-15', hasta: '2014-05-24' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales MIC Parapeti Zona Alta Fase IV', monto: 939415, cargo: 'Fiscal de obra', desde: '2014-05-02', hasta: '2014-09-30' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Tarabuco Fase III', monto: 479218.75, cargo: 'Fiscal de obra', desde: '2013-06-05', hasta: '2013-10-29' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN SISTEMA DE RIEGO SAN ANTONIO', monto: 125000, cargo: 'Especialista Hidráulico', desde: '2014-03-15', hasta: '2014-05-24' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones MIC Parapeti Fase IV', monto: 939415, cargo: 'Fiscal de obra', desde: '2014-05-02', hasta: '2014-09-30' },
                 { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Alcantarillado Sanitario La Tapera', monto: 908211.34, cargo: 'Fiscal de obra', desde: '2015-01-01', hasta: '2015-12-31' },
                 { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Alcantarillado Sanitario Villa Charcas', monto: 4259084.31, cargo: 'Fiscal de obra', desde: '2015-01-01', hasta: '2015-12-31' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones transversales y Longitudinales PMIC Horcas Fase I', monto: 670000, cargo: 'Supervisor de obra', desde: '2015-07-27', hasta: '2015-11-20' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Diques de Gavión y HºCº Proyecto Manejo Integral Cuenca Represas Yana Khakha y Challhua Mayu', monto: 2689305.45, cargo: 'Fiscal de obra', desde: '2015-10-27', hasta: '2017-12-19' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'AJUSTE Y COMPLEMENTACIÓN DEL ESTUDIO DEL PROYECTO CONSTRUCCIÓN REPRESA CHIUTARA (POTOSÍ)', monto: 245000, cargo: 'Especialista Hidráulico', desde: '2016-03-22', hasta: '2016-06-25' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION TECNICA APROVECHAMIENTO DE LOS RECURSOS HIDRICOS EN EL MUNICIPIO DE HUACARETA PAQUETE 4: USO DE FUENTE DE AGUA PARA AFRONTAR LA SEQUIA AGUA BUENA', monto: 508000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2016-07-28', hasta: '2017-03-06' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISIÓN TECNICA APROVECHAMIENTO DE LOS RECURSOS HIDRICOS EN EL MUNICIPIO DE HUACARETA PAQUETE 5: USO DE FUENTE DE AGUA PARA AFRONTAR LA SEQUIA YERENDA', monto: 39360, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2016-10-26', hasta: '2017-06-04' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales, PMIC Horcas Fase II (Comunidad Sauce Molino)', monto: 458089.49, cargo: 'Fiscal de obra', desde: '2016-10-17', hasta: '2016-12-28' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de diques Transversales de Gavión, Atajados y Sistemas de Riego tecnificado con el Proyecto MIC - Rio Presto', monto: 1645343.96, cargo: 'Fiscal de obra', desde: '2016-10-26', hasta: '2017-05-31' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales, PMIC Horcas Fase II (Comunidad San Juan de Horcas)', monto: 356979.6, cargo: 'Fiscal de obra', desde: '2016-11-23', hasta: '2017-03-23' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN CONSTRUCCIÓN SISTEMA DE MICRORIEGO EN LA COMUNIDAD DE MOLANI', monto: 120000, cargo: 'Especialista Hidráulico', desde: '2016-12-14', hasta: '2017-05-13' },
-                { id: uid(), entidad: 'Consultora M&R', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN CONSTRUCCIÓN SISTEMA DE MICRORIEGO COMUNIDAD DE PUCA PAMPA', monto: 198000, cargo: 'Especialista en Hidrología e Hidráulico', desde: '2017-01-01', hasta: '2017-07-01' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones transversales y Longitudinales PMIC Horcas Sopachuy Fase III Zona Cuenca Media', monto: 407906.13, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales PMIC Horcas Sopachuy Fase III Zona Cuenca Baja', monto: 367198.18, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Obras Hidráulicas MIC Rio San Lucas Zona Alta', monto: 1997886.05, cargo: 'Fiscal de obra', desde: '2017-12-05', hasta: '2018-12-28' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISÓN TECNICA MEJORAMIENTO DE LOS CANALES DE RIEGO AREA URBANA CULPINA, CON ENFOQUE DE CAMBIO CLIMATICO', monto: 195000, cargo: 'Especialista Hidráulico', desde: '2018-03-28', hasta: '2019-12-24' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN PROYECTO MEJORAMIENTO DE RIEGO ISCU ISCU, YOCALLA, POTOSI', monto: 250468.72, cargo: 'Especialista Hidráulico', desde: '2018-06-01', hasta: '2018-09-05' },
-                { id: uid(), entidad: 'Constructora y Consultora GUTIQUIGAM', objeto: 'CONST. CANAL DE RIEGO SAUSIWAJ (EDTP)', monto: 1292639.82, cargo: 'Especialista Hidráulico', desde: '2018-08-15', hasta: '2019-02-22' },
-                { id: uid(), entidad: 'Consultora y Constructora CONSTICONS SRL', objeto: 'EDTP CONSTRUCCIÓN REPRESA Y SISTEMA DE RIEGO TURURUMBA', monto: 685229.89, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2019-03-01', hasta: '2019-11-30' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Potable Achuma Z. Alta (Camataqui C. Villa Abecia)', monto: 597784.29, cargo: 'Fiscal de obra', desde: '2019-02-12', hasta: '2019-09-04' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Ampl. Sist. Alcantarillado Sanitario Escana (Yamparáez)', monto: 739381.5, cargo: 'Fiscal de obra', desde: '2019-02-02', hasta: '2019-08-20' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Agua Potable Chiri (Camataqui C. Villa Abecia)', monto: 675081.8, cargo: 'Fiscal de obra', desde: '2019-03-07', hasta: '2019-08-03' },
-                { id: uid(), entidad: 'Constructora y Consultora Acción Socio Ambiental CCOAS SRL', objeto: 'AJUSTE Y COMPLEMENTACIÓN DEL ESTUDIO A NIVEL EDTP CONSTRUCCIÓN PRESA Y RIEGO TECNIFICADO EN ATOSILLO', monto: 340000, cargo: 'Especialista en Diseño Hidráulico e Hidrológico', desde: '2019-07-01', hasta: '2019-10-19' },
-                { id: uid(), entidad: 'Asociación Accidental "E&M"', objeto: 'Supervisión técnica Construcción trasvase y planta potabilizadora para las zonas altas Sucre', monto: 520000, cargo: 'Especialista Hidráulico', desde: '2021-05-25', hasta: '2021-12-23' },
-                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP MANEJO INTEGRAL DE LA MICROCUENCA TARACACHI MUNICIPIO DE ARQUE CBBA', monto: 990000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2021-12-27', hasta: '2022-04-26' },
-                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP CONSTRUCCION REPRESA Y SISTEMA DE RIEGO QUEBRADA ONDA (CKOCHAS)', monto: 90000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2021-10-28', hasta: '2022-10-07' },
-                { id: uid(), entidad: 'ROES CONSULTORES Y ASOCIADOS', objeto: 'CONSTRUCCIÓN INTERCONEXIONES DE LA OBRA DE TOMA Y PTAP PARA EL SISTEMA DE AGUA POTABLE COBIJA', monto: 100000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2022-01-02', hasta: '2022-12-20' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Sup. Tec. Y Ambiental Const. Sistema de Riego Pedernal Monteagudo', monto: 50445314.59, cargo: 'Especialista Hidráulico', desde: '2020-05-15', hasta: '2023-06-08' },
-                { id: uid(), entidad: 'MINISTERIO DE MEDIO AMBIENTE Y AGUA UCP PAAP', objeto: 'CONSULTOR ESPECIALISTA HIDROLOGO PROYECTO CONCLUSIÓN PLANTA DE TRATAMIENTO DE AGUA POTABLE RIBERALTA', monto: 41000, cargo: 'Especialista Hidrólogo', desde: '2023-08-02', hasta: '2023-09-01' },
-                { id: uid(), entidad: 'Consultora AIPPA', objeto: 'Estudio Diseño Técnico de Preinversión Construcción Sistema de Riego Isluco (Ravelo)', monto: 250000, cargo: 'Especialista Hidráulico - Hidrólogo', desde: '2023-05-23', hasta: '2023-09-25' },
-                { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Supervisión Técnica Y Ambiental Construcción Sistema De Riego Pampas De Padilla Lote 2-A', monto: 13073203.72, cargo: 'Especialista Hidráulico - Hidrólogo', desde: '2022-02-25', hasta: '2024-03-29' },
-                { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Estudio de Diseño Técnico de Preinversión (EDTP) "Construcción Presa Rujero Grande"', monto: 1700232.7, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2023-02-02', hasta: '2024-04-23' },
-                { id: uid(), entidad: 'Asociación Accidental del SUR', objeto: 'Servicio de Consultoría de Supervisión para el Proyecto Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista en Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Fase I', monto: 670000, cargo: 'Supervisor de obra', desde: '2015-07-27', hasta: '2015-11-20' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Diques de Gavión Represas Yana Khakha', monto: 2689305.45, cargo: 'Fiscal de obra', desde: '2015-10-27', hasta: '2017-12-19' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'AJUSTE ESTUDIO CONSTRUCCIÓN REPRESA CHIUTARA', monto: 245000, cargo: 'Especialista Hidráulico', desde: '2016-03-22', hasta: '2016-06-25' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS HUACARETA', monto: 508000, cargo: 'Especialista Hidráulico', desde: '2016-07-28', hasta: '2017-03-06' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS YERENDA', monto: 39360, cargo: 'Especialista Hidráulico', desde: '2016-10-26', hasta: '2017-06-04' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sauce Molino', monto: 458089.49, cargo: 'Fiscal de obra', desde: '2016-10-17', hasta: '2016-12-28' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de diques y sistemas de riego MIC Rio Presto', monto: 1645343.96, cargo: 'Fiscal de obra', desde: '2016-10-26', hasta: '2017-05-31' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas San Juan', monto: 356979.6, cargo: 'Fiscal de obra', desde: '2016-11-23', hasta: '2017-03-23' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE MICRORIEGO MOLANI', monto: 120000, cargo: 'Especialista Hidráulico', desde: '2016-12-14', hasta: '2017-05-13' },
+                { id: uid(), entidad: 'Consultora M&R', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE MICRORIEGO PUCA PAMPA', monto: 198000, cargo: 'Especialista Hidrología', desde: '2017-01-01', hasta: '2017-07-01' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sopachuy Cuenca Media', monto: 407906.13, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sopachuy Cuenca Baja', monto: 367198.18, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Obras Hidráulicas MIC Rio San Lucas', monto: 1997886.05, cargo: 'Fiscal de obra', desde: '2017-12-05', hasta: '2018-12-28' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION MEJORAMIENTO CANALES DE RIEGO CULPINA', monto: 195000, cargo: 'Especialista Hidráulico', desde: '2018-03-28', hasta: '2019-12-24' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'EDTP MEJORAMIENTO DE RIEGO ISCU ISCU', monto: 250468.72, cargo: 'Especialista Hidráulico', desde: '2018-06-01', hasta: '2018-09-05' },
+                { id: uid(), entidad: 'Constructora GUTIQUIGAM', objeto: 'CONST. CANAL DE RIEGO SAUSIWAJ', monto: 1292639.82, cargo: 'Especialista Hidráulico', desde: '2018-08-15', hasta: '2019-02-22' },
+                { id: uid(), entidad: 'CONSTICONS SRL', objeto: 'EDTP CONSTRUCCIÓN REPRESA Y RIEGO TURURUMBA', monto: 685229.89, cargo: 'Especialista Hidrología', desde: '2019-03-01', hasta: '2019-11-30' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Potable Achuma Z. Alta', monto: 597784.29, cargo: 'Fiscal de obra', desde: '2019-02-12', hasta: '2019-09-04' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Ampl. Sist. Alcantarillado Sanitario Escana', monto: 739381.5, cargo: 'Fiscal de obra', desde: '2019-02-02', hasta: '2019-08-20' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Agua Potable Chiri', monto: 675081.8, cargo: 'Fiscal de obra', desde: '2019-03-07', hasta: '2019-08-03' },
+                { id: uid(), entidad: 'CCOAS SRL', objeto: 'AJUSTE EDTP CONSTRUCCIÓN PRESA Y RIEGO ATOSILLO', monto: 340000, cargo: 'Especialista Hidráulico', desde: '2019-07-01', hasta: '2019-10-19' },
+                { id: uid(), entidad: 'Asociación Accidental E&M', objeto: 'Supervisión trasvase y planta potabilizadora Sucre', monto: 520000, cargo: 'Especialista Hidráulico', desde: '2021-05-25', hasta: '2021-12-23' },
+                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP MANEJO INTEGRAL MICROCUENCA TARACACHI', monto: 990000, cargo: 'Especialista Hidráulico', desde: '2021-12-27', hasta: '2022-04-26' },
+                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP CONSTRUCCION REPRESA QUEBRADA ONDA', monto: 90000, cargo: 'Especialista Hidráulico', desde: '2021-10-28', hasta: '2022-10-07' },
+                { id: uid(), entidad: 'ROES CONSULTORES', objeto: 'INTERCONEXIONES OBRA DE TOMA Y PTAP COBIJA', monto: 100000, cargo: 'Especialista Hidráulico', desde: '2022-01-02', hasta: '2022-12-20' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Sup. Const. Sistema de Riego Pedernal Monteagudo', monto: 50445314.59, cargo: 'Especialista Hidráulico', desde: '2020-05-15', hasta: '2023-06-08' },
+                { id: uid(), entidad: 'MMAyA UCP PAAP', objeto: 'CONSULTOR ESPECIALISTA HIDROLOGO RIBERALTA', monto: 41000, cargo: 'Especialista Hidrólogo', desde: '2023-08-02', hasta: '2023-09-01' },
+                { id: uid(), entidad: 'Consultora AIPPA', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE RIEGO ISLUCO', monto: 250000, cargo: 'Especialista Hidráulico', desde: '2023-05-23', hasta: '2023-09-25' },
+                { id: uid(), entidad: 'Asociación El Quebracho', objeto: 'Supervisión Construcción Riego Pampas De Padilla', monto: 13073203.72, cargo: 'Especialista Hidráulico', desde: '2022-02-25', hasta: '2024-03-29' },
+                { id: uid(), entidad: 'Asociación El Quebracho', objeto: 'EDTP CONSTRUCCIÓN PRESA RUJERO GRANDE', monto: 1700232.7, cargo: 'Especialista Hidrología', desde: '2023-02-02', hasta: '2024-04-23' },
+                { id: uid(), entidad: 'Asociación del SUR', objeto: 'Supervisión Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
             ];
         }
 
@@ -873,7 +882,7 @@
             pay: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20M6 15h2"/></svg>',
             client: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
             exp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 22v-4M4 12H2h2M22 12h-2M4 4l2.5 2.5M17.5 17.5L20 20M4 20l2.5-2.5M17.5 6.5L20 4"/><circle cx="12" cy="12" r="4"/></svg>',
-            cfg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.36.62 1 1 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>',
+            cfg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.36.62 1 1 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>',
             plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
             pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3"/></svg>',
             edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
@@ -914,7 +923,7 @@
         }
 
         /* ============================================================
-           VIEWS
+           VIEWS (simplificadas para el ejemplo)
            ============================================================ */
         function viewDashboard() {
             const cots = S.cotizaciones;
@@ -927,11 +936,6 @@
             const totalPorCobrar = pagos.reduce((s, p) => s + Math.max(0, Number(p.monto) - Number(p.montoPagado || 0)), 0);
             const totalExperiencia = exp.reduce((s, e) => s + Number(e.monto || 0), 0);
 
-            const expPorCargo = {};
-            exp.forEach(e => { expPorCargo[e.cargo] = (expPorCargo[e.cargo] || 0) + Number(e.monto || 0); });
-            const topCargos = Object.entries(expPorCargo).sort((a, b) => b[1] - a[1]).slice(0, 4);
-            const maxCargo = Math.max(1, ...topCargos.map(x => x[1]));
-
             return `
             <div class="page-head">
                 <div><p class="eyebrow">Panel general</p><h1>Dashboard</h1><p>Resumen de cotizaciones, cobros y experiencia profesional.</p></div>
@@ -942,19 +946,6 @@
                 <div class="kpi accent"><div class="label">Cobrado a la fecha</div><div class="val">${bs(totalCobrado)}</div><div class="sub">${pagos.length} registros</div></div>
                 <div class="kpi danger"><div class="label">Por cobrar</div><div class="val">${bs(totalPorCobrar)}</div><div class="sub">${pagos.filter(p=>pagoEstado(p)!=='pagado').length} pendientes</div></div>
                 <div class="kpi"><div class="label">Experiencia total</div><div class="val">${bs(totalExperiencia)}</div><div class="sub">${exp.length} proyectos</div></div>
-            </div>
-            <div class="panel">
-                <div class="panel-h"><h3>Monto de experiencia por cargo</h3></div>
-                <div class="panel-body">
-                    ${topCargos.length ? topCargos.map(([cargo, monto]) => `
-                        <div style="display:grid;grid-template-columns:180px 1fr 80px;gap:10px;align-items:center;margin-bottom:10px;font-size:12.5px;">
-                            <span style="font-size:12px;">${esc(cargo)}</span>
-                            <div style="background:#E4DFC9;border-radius:2px;height:9px;overflow:hidden;">
-                                <div style="height:100%;border-radius:2px;background:var(--accent);width:${(monto/maxCargo*100)||0}%;"></div>
-                            </div>
-                            <span style="font-family:'JetBrains Mono';font-size:11.5px;color:var(--text-soft);text-align:right;">${bs(monto)}</span>
-                        </div>`).join('') : '<p style="color:var(--text-soft);font-size:13px;">Sin datos de experiencia aún.</p>'}
-                </div>
             </div>`;
         }
 
@@ -1051,21 +1042,6 @@
 
         function viewExperiencia() {
             const rows = [...S.experiencia].sort((a, b) => (b.desde || '').localeCompare(a.desde || ''));
-            const now = new Date();
-            const tenYearsAgo = new Date(now);
-            tenYearsAgo.setFullYear(now.getFullYear() - 10);
-            const recent = S.experiencia.filter(e => new Date(e.desde + 'T00:00:00') >= tenYearsAgo).sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
-
-            let minDate = tenYearsAgo;
-            let maxDate = now;
-            if (recent.length) {
-                const first = new Date(recent[0].desde + 'T00:00:00');
-                const last = new Date(recent[recent.length - 1].hasta + 'T00:00:00');
-                if (first < minDate) minDate = first;
-                if (last > maxDate) maxDate = last;
-            }
-            const rangeMs = maxDate.getTime() - minDate.getTime();
-
             return `
             <div class="page-head">
                 <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados (últimos 10 años), con diagrama de Gantt y exportación a Excel.</p></div>
@@ -1074,40 +1050,8 @@
                     <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar a Excel</button>
                 </div>
             </div>
-
-            <div class="panel" style="margin-bottom:20px;">
-                <div class="panel-h"><h3>Diagrama de Gantt — Últimos 10 años</h3></div>
-                <div class="panel-body">
-                    ${recent.length ? `
-                        <div class="gantt-legend">
-                            <span><span class="dot primary"></span> Proyectos activos</span>
-                            <span><span class="dot light"></span> Proyectos en curso</span>
-                        </div>
-                        <div class="gantt-container">
-                            ${recent.map(e => {
-                                const desde = new Date(e.desde + 'T00:00:00');
-                                const hasta = new Date(e.hasta + 'T00:00:00');
-                                const startPct = Math.max(0, ((desde.getTime() - minDate.getTime()) / rangeMs) * 100);
-                                const widthPct = Math.max(2, ((hasta.getTime() - desde.getTime()) / rangeMs) * 100);
-                                const isActive = hasta >= now;
-                                const dias = diffDays(e.desde, e.hasta);
-                                return `<div class="gantt-row">
-                                    <div class="gantt-label" title="${esc(e.objeto)}">${esc(e.objeto.slice(0, 35))}${e.objeto.length>35?'…':''}</div>
-                                    <div class="gantt-track">
-                                        <div class="gantt-bar ${isActive?'light':''}" style="left:${startPct}%;width:${Math.min(widthPct, 100)}%;">
-                                            ${fmtDateShort(e.desde)} — ${fmtDateShort(e.hasta)}
-                                        </div>
-                                    </div>
-                                    <div class="gantt-duration">${dias}d</div>
-                                </div>`;
-                            }).join('')}
-                        </div>
-                    ` : '<p style="color:var(--text-soft);font-size:13px;">No hay proyectos en los últimos 10 años.</p>'}
-                </div>
-            </div>
-
             <div class="panel">
-                <div class="panel-h"><h3>Lista completa de proyectos</h3></div>
+                <div class="panel-h"><h3>Lista de proyectos</h3></div>
                 <div class="panel-body">
                     ${rows.length ? `<div class="table-wrap"><table>
                         <thead><tr><th>#</th><th>Entidad / Empresa</th><th>Objeto</th><th class="tright">Monto</th><th>Cargo</th><th>Desde</th><th>Hasta</th><th></th></tr></thead>
@@ -1200,7 +1144,7 @@
         }
 
         /* ============================================================
-           MODALES
+           MODALES (simplificadas)
            ============================================================ */
         function openCotModal(cot) {
             const isNew = !cot;
@@ -1535,32 +1479,46 @@
         function bindViewEvents() {
             const main = document.getElementById('main');
 
-            // LOGIN / REGISTER - Usando eventos submit de los formularios
-            document.getElementById('login-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
+            // LOGIN - Usando eventos click en los botones (sin formularios)
+            document.getElementById('btn-login').onclick = async () => {
                 const email = document.getElementById('login-email').value.trim();
                 const password = document.getElementById('login-password').value;
                 if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
                 await login(email, password);
-            });
+            };
 
-            document.getElementById('register-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
+            document.getElementById('btn-register').onclick = async () => {
                 const email = document.getElementById('register-email').value.trim();
                 const password = document.getElementById('register-password').value;
                 if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
                 if (password.length < 6) { showLoginError('La contraseña debe tener al menos 6 caracteres.'); return; }
                 await register(email, password);
+            };
+
+            // Enter key para login
+            document.getElementById('login-password').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('btn-login').click();
+            });
+            document.getElementById('login-email').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('btn-login').click();
+            });
+
+            // Enter key para register
+            document.getElementById('register-password').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('btn-register').click();
+            });
+            document.getElementById('register-email').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('btn-register').click();
             });
 
             document.getElementById('goto-register').onclick = () => {
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('register-form').style.display = 'block';
+                document.getElementById('login-form-container').style.display = 'none';
+                document.getElementById('register-form-container').style.display = 'block';
                 hideLoginError();
             };
             document.getElementById('goto-login').onclick = () => {
-                document.getElementById('login-form').style.display = 'block';
-                document.getElementById('register-form').style.display = 'none';
+                document.getElementById('login-form-container').style.display = 'block';
+                document.getElementById('register-form-container').style.display = 'none';
                 hideLoginError();
             };
             document.getElementById('btn-logout').onclick = logout;
