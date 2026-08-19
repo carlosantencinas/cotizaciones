@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ing. Antequera — Suite Profesional</title>
+    <title>Ing. Carlos Antequera — Suite Profesional</title>
     <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/tu-usuario/tu-repo/main/favicon.ico">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -498,7 +498,7 @@
         .modal {
             background: var(--surface);
             border-radius: var(--radius);
-            max-width: 720px;
+            max-width: 760px;
             width: 100%;
             box-shadow: var(--shadow-lg);
             border: 1px solid var(--border);
@@ -553,6 +553,24 @@
         .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
         .row4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
 
+        .cv-edit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .cv-edit-grid .field input {
+            font-size: 13px;
+            padding: 8px 10px;
+        }
+        .cv-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin: 16px 0 10px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--border);
+        }
+
         #toast {
             position: fixed;
             bottom: 24px;
@@ -580,6 +598,7 @@
             .nav-user { display: none; }
             main { padding: 20px 16px; }
             .row2, .row3, .row4 { grid-template-columns: 1fr; }
+            .cv-edit-grid { grid-template-columns: 1fr; }
             .gantt-label { width: 100px; font-size: 11px; }
             .page-head { flex-direction: column; }
             .login-box { padding: 28px 20px; }
@@ -662,7 +681,7 @@
                 <div class="email" id="user-email">usuario@email.com</div>
                 <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
             </div>
-            <div class="nav-foot mono">RNI 28.106 · v2.2</div>
+            <div class="nav-foot mono">RNI 28.106 · v2.3</div>
         </aside>
         <main id="main"></main>
     </div>
@@ -671,7 +690,7 @@
 
     <script>
         // ============================================================
-        // FUNCIONES GLOBALES - DECLARADAS PRIMERO
+        // FUNCIONES GLOBALES
         // ============================================================
         function uid() {
             return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -726,7 +745,7 @@
         };
 
         // ============================================================
-        // DATOS DE LA HOJA DE VIDA (con toda tu información)
+        // DATOS DE LA HOJA DE VIDA
         // ============================================================
         const DATOS_PERSONALES = {
             nombre: 'CARLOS ANDRES ANTEQUERA ENCINAS',
@@ -762,44 +781,7 @@
         ];
 
         // ============================================================
-        // STATE
-        // ============================================================
-        const S = {
-            view: 'dashboard',
-            cotizaciones: [],
-            pagos: [],
-            clientes: [],
-            experiencia: [],
-            formacion: [],
-            cursos: [],
-            datosPersonales: {},
-            config: { ...DEFAULT_CONFIG },
-            ganttYears: 10,
-            user: null
-        };
-
-        // ============================================================
-        // ICONS
-        // ============================================================
-        const ICONS = {
-            dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
-            quote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>',
-            pay: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20M6 15h2"/></svg>',
-            client: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-            exp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 22v-4M4 12H2h2M22 12h-2M4 4l2.5 2.5M17.5 17.5L20 20M4 20l2.5-2.5M17.5 6.5L20 4"/><circle cx="12" cy="12" r="4"/></svg>',
-            cfg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.36.62 1 1 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>',
-            plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
-            pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3"/></svg>',
-            edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
-            trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>',
-            copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
-            excel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M8 12l3 3-3 3M14 12l-3 3 3 3"/></svg>',
-            cv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h6M8 16h4"/></svg>',
-            empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>'
-        };
-
-        // ============================================================
-        // EXPERIENCIA COMPLETA (con todos tus datos del Excel)
+        // EXPERIENCIA COMPLETA
         // ============================================================
         const EXPERIENCIA_COMPLETA = [
             { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS, ATAJADOS Y MICRORIEGOS COMUNIDAD SAN BLAS ALTO', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
@@ -840,6 +822,44 @@
             { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Estudio de Diseño Técnico de Preinversión (EDTP) "Construcción Presa Rujero Grande"', monto: 1700232.7, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2023-02-02', hasta: '2024-04-23' },
             { id: uid(), entidad: 'Asociación Accidental del SUR', objeto: 'Servicio de Consultoría de Supervisión para el Proyecto Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista en Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
         ];
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        const S = {
+            view: 'dashboard',
+            cotizaciones: [],
+            pagos: [],
+            clientes: [],
+            experiencia: [],
+            formacion: [],
+            cursos: [],
+            datosPersonales: {},
+            config: { ...DEFAULT_CONFIG },
+            ganttYears: 10,
+            user: null,
+            editingCV: false
+        };
+
+        // ============================================================
+        // ICONS
+        // ============================================================
+        const ICONS = {
+            dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+            quote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>',
+            pay: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20M6 15h2"/></svg>',
+            client: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+            exp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 22v-4M4 12H2h2M22 12h-2M4 4l2.5 2.5M17.5 17.5L20 20M4 20l2.5-2.5M17.5 6.5L20 4"/><circle cx="12" cy="12" r="4"/></svg>',
+            cfg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.36.62 1 1 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>',
+            plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
+            pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13m0 0-4-4m4 4 4-4"/><path d="M3 17v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3"/></svg>',
+            edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+            trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>',
+            copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+            excel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M8 12l3 3-3 3M14 12l-3 3 3 3"/></svg>',
+            cv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h6M8 16h4"/></svg>',
+            empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>'
+        };
 
         // ============================================================
         // FIREBASE
@@ -912,9 +932,6 @@
                 else if (e.code === 'auth/invalid-credential') msg = '❌ Credenciales inválidas. Verifica tus datos.';
                 else if (e.code === 'auth/too-many-requests') msg = '⏳ Demasiados intentos fallidos. Espera un momento.';
                 else if (e.code === 'auth/network-request-failed') msg = '🌐 Error de red. Verifica tu conexión.';
-                else if (e.code === 'auth/email-already-in-use') msg = '📧 Este correo ya está registrado.';
-                else if (e.code === 'auth/weak-password') msg = '🔑 La contraseña es demasiado débil. Usa al menos 6 caracteres.';
-                else if (e.code === 'auth/invalid-email') msg = '📧 Correo electrónico inválido.';
                 showLoginError(msg);
                 return false;
             }
@@ -1048,7 +1065,6 @@
                 if (cfg) S.config = { ...DEFAULT_CONFIG, ...JSON.parse(cfg) };
             } catch (e) {}
 
-            // Inicializar con datos semilla si no existen
             if (S.cotizaciones === null) { S.cotizaciones = seedCotizaciones(); await saveCotizaciones(userId); }
             if (S.pagos === null) { S.pagos = seedPagos(); await savePagos(userId); }
             if (S.clientes === null) { S.clientes = seedClientes(); await saveClientes(userId); }
@@ -1082,7 +1098,8 @@
         function seedCotizaciones() {
             return [
                 { id: uid(), fecha: '2026-04-24', proyecto: 'REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'MODELACIÓN HIDRAULICA TUBERÍA OBRA DE TOMA Y DESFOGUE', items: [{ id: uid(), actividad: 'Modelación Hidráulica numérica tubería obra de toma y desfogue (WaterCAD)', pu: 250, unidad: 'Bs/escenario', cantidad: 8 }, { id: uid(), actividad: 'Informe Hidráulico', pu: 1000, unidad: 'Bs/informe', cantidad: 1 }], descuento: 500, plazoDias: 6, nota: DEFAULT_CONFIG.defaultNota, entregables: DEFAULT_CONFIG.defaultEntregables, estado: 'aceptada' },
-                { id: uid(), fecha: '2026-08-19', proyecto: 'SISTEMA DE RIEGO REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'INFORME HIDRAULICO DE REVISIÓN DE LA RED DE DISTRIBUCIÓN', items: [{ id: uid(), actividad: 'Revisión modelos WaterCAD de distribución', pu: 3500, unidad: '1 informe', cantidad: 1 }], descuento: 0, plazoDias: 6, nota: DEFAULT_CONFIG.defaultNota, entregables: 'en formato digital:\n- Informe Hidráulico de análisis de la red de distribución.', estado: 'enviada' }
+                { id: uid(), fecha: '2026-08-19', proyecto: 'SISTEMA DE RIEGO REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'INFORME HIDRAULICO DE REVISIÓN DE LA RED DE DISTRIBUCIÓN', items: [{ id: uid(), actividad: 'Revisión modelos WaterCAD de distribución', pu: 3500, unidad: '1 informe', cantidad: 1 }], descuento: 0, plazoDias: 6, nota: DEFAULT_CONFIG.defaultNota, entregables: 'en formato digital:\n- Informe Hidráulico de análisis de la red de distribución.', estado: 'enviada' },
+                { id: uid(), fecha: '2026-08-19', proyecto: 'REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'DISEÑO DISIPADOR DE IMPACTO (DESFOGUE DE FONDO)', items: [{ id: uid(), actividad: 'Diseño y modelación hidráulica cámara disipadora de impacto', pu: 700, unidad: 'bs/estructura', cantidad: 1 }, { id: uid(), actividad: 'Informe técnico hidráulico', pu: 1000, unidad: 'bs/informe', cantidad: 1 }], descuento: 680, plazoDias: 5, nota: DEFAULT_CONFIG.defaultNota, entregables: 'en formato digital:\n- Informe técnico de la modelación hidráulica.', estado: 'aceptada' }
             ];
         }
 
@@ -1312,35 +1329,85 @@
                 <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados con hoja de vida completa y diagrama de Gantt configurable.</p></div>
                 <div class="page-actions">
                     <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar hoja de vida</button>
+                    <button class="btn btn-primary" id="btn-edit-cv">${ICONS.edit} Editar hoja de vida</button>
                     <button class="btn btn-primary" id="btn-new-exp">${ICONS.plus} Agregar proyecto</button>
                 </div>
             </div>
 
-            <!-- Datos personales y formación -->
+            <!-- Hoja de vida editable -->
             <div class="panel" style="margin-bottom:20px;">
-                <div class="panel-h"><h3>📋 Hoja de vida — Resumen</h3></div>
+                <div class="panel-h">
+                    <h3>📋 Hoja de vida — Editable</h3>
+                    ${S.editingCV ? `<button class="btn btn-sm btn-success" id="btn-save-cv">💾 Guardar cambios</button>` : ''}
+                </div>
                 <div class="panel-body">
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px;">
-                        <div><strong>Nombre:</strong> ${S.datosPersonales.nombre || '—'}</div>
-                        <div><strong>CI:</strong> ${S.datosPersonales.ci || '—'} (${S.datosPersonales.lugarExpedicion || '—'})</div>
-                        <div><strong>Edad:</strong> ${S.datosPersonales.edad || '—'}</div>
-                        <div><strong>Nacionalidad:</strong> ${S.datosPersonales.nacionalidad || '—'}</div>
-                        <div><strong>Profesión:</strong> ${S.datosPersonales.profesion || '—'}</div>
-                        <div><strong>RNI:</strong> ${S.datosPersonales.registroProfesional || '—'}</div>
-                    </div>
-                    <div style="margin-bottom:12px;">
-                        <strong>Formación académica (${S.formacion.length} títulos):</strong>
-                        <ul style="margin-top:4px;padding-left:20px;font-size:13px;">
-                            ${S.formacion.map(f => `<li>${f.grado} — ${f.institucion} (${fmtDate(f.desde)} - ${fmtDate(f.hasta)})</li>`).join('')}
-                        </ul>
-                    </div>
-                    <div>
-                        <strong>Cursos de especialización (${S.cursos.length} cursos):</strong>
-                        <ul style="margin-top:4px;padding-left:20px;font-size:13px;">
-                            ${S.cursos.slice(0, 5).map(c => `<li>${c.curso} — ${c.institucion} (${c.horas}h)</li>`).join('')}
-                            ${S.cursos.length > 5 ? `<li style="color:var(--text-soft);">...y ${S.cursos.length - 5} cursos más</li>` : ''}
-                        </ul>
-                    </div>
+                    ${S.editingCV ? `
+                        <div class="cv-section-title">📌 Datos personales</div>
+                        <div class="cv-edit-grid">
+                            <div class="field"><label>Nombre completo</label><input id="cv-nombre" value="${attr(S.datosPersonales.nombre)}"></div>
+                            <div class="field"><label>CI</label><input id="cv-ci" value="${attr(S.datosPersonales.ci)}"></div>
+                            <div class="field"><label>Lugar expedición</label><input id="cv-lugar" value="${attr(S.datosPersonales.lugarExpedicion)}"></div>
+                            <div class="field"><label>Edad</label><input id="cv-edad" value="${attr(S.datosPersonales.edad)}"></div>
+                            <div class="field"><label>Nacionalidad</label><input id="cv-nacionalidad" value="${attr(S.datosPersonales.nacionalidad)}"></div>
+                            <div class="field"><label>Profesión</label><input id="cv-profesion" value="${attr(S.datosPersonales.profesion)}"></div>
+                            <div class="field"><label>Registro profesional (RNI)</label><input id="cv-rni" value="${attr(S.datosPersonales.registroProfesional)}"></div>
+                        </div>
+
+                        <div class="cv-section-title">🎓 Formación académica</div>
+                        <div id="cv-formacion-container">
+                            ${S.formacion.map((f, i) => `
+                                <div class="row4" style="margin-bottom:8px;align-items:center;" data-f-idx="${i}">
+                                    <input value="${attr(f.institucion)}" placeholder="Institución" class="cv-f-institucion">
+                                    <input type="date" value="${attr(f.desde)}" class="cv-f-desde">
+                                    <input type="date" value="${attr(f.hasta)}" class="cv-f-hasta">
+                                    <input value="${attr(f.grado)}" placeholder="Grado" class="cv-f-grado">
+                                    <button class="btn btn-sm btn-danger cv-f-remove" style="padding:4px 8px;">✕</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="btn btn-sm btn-ghost" id="cv-add-formacion">+ Agregar formación</button>
+
+                        <div class="cv-section-title">📚 Cursos de especialización</div>
+                        <div id="cv-cursos-container">
+                            ${S.cursos.map((c, i) => `
+                                <div class="row4" style="margin-bottom:8px;align-items:center;" data-c-idx="${i}">
+                                    <input value="${attr(c.institucion)}" placeholder="Institución" class="cv-c-institucion">
+                                    <input type="date" value="${attr(c.desde)}" class="cv-c-desde">
+                                    <input type="date" value="${attr(c.hasta)}" class="cv-c-hasta">
+                                    <input value="${attr(c.curso)}" placeholder="Curso" class="cv-c-curso">
+                                    <input type="number" value="${c.horas}" placeholder="Horas" class="cv-c-horas" style="width:70px;">
+                                    <button class="btn btn-sm btn-danger cv-c-remove" style="padding:4px 8px;">✕</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="btn btn-sm btn-ghost" id="cv-add-curso">+ Agregar curso</button>
+
+                        <div style="margin-top:16px;color:var(--text-soft);font-size:12px;">
+                            💡 Los proyectos de experiencia se editan en la tabla de abajo.
+                        </div>
+                    ` : `
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px;">
+                            <div><strong>Nombre:</strong> ${S.datosPersonales.nombre || '—'}</div>
+                            <div><strong>CI:</strong> ${S.datosPersonales.ci || '—'} (${S.datosPersonales.lugarExpedicion || '—'})</div>
+                            <div><strong>Edad:</strong> ${S.datosPersonales.edad || '—'}</div>
+                            <div><strong>Nacionalidad:</strong> ${S.datosPersonales.nacionalidad || '—'}</div>
+                            <div><strong>Profesión:</strong> ${S.datosPersonales.profesion || '—'}</div>
+                            <div><strong>RNI:</strong> ${S.datosPersonales.registroProfesional || '—'}</div>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <strong>Formación académica (${S.formacion.length} títulos):</strong>
+                            <ul style="margin-top:4px;padding-left:20px;font-size:13px;">
+                                ${S.formacion.map(f => `<li>${f.grado} — ${f.institucion} (${fmtDate(f.desde)} - ${fmtDate(f.hasta)})</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div>
+                            <strong>Cursos de especialización (${S.cursos.length} cursos):</strong>
+                            <ul style="margin-top:4px;padding-left:20px;font-size:13px;">
+                                ${S.cursos.slice(0, 5).map(c => `<li>${c.curso} — ${c.institucion} (${c.horas}h)</li>`).join('')}
+                                ${S.cursos.length > 5 ? `<li style="color:var(--text-soft);">...y ${S.cursos.length - 5} cursos más</li>` : ''}
+                            </ul>
+                        </div>
+                    `}
                 </div>
             </div>
 
@@ -1466,6 +1533,165 @@
         // ============================================================
         // FUNCIONES DE MODALES
         // ============================================================
+        function openCotModal(cot) {
+            const isNew = !cot;
+            const c = cot ? JSON.parse(JSON.stringify(cot)) : { 
+                id: uid(), 
+                fecha: new Date().toISOString().slice(0, 10), 
+                proyecto: '', 
+                cliente: '', 
+                titulo: '', 
+                items: [{ id: uid(), actividad: '', pu: 0, unidad: '', cantidad: 1 }], 
+                descuento: 0, 
+                plazoDias: 5, 
+                nota: S.config.defaultNota || '', 
+                entregables: S.config.defaultEntregables || '', 
+                estado: 'borrador' 
+            };
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal">
+                    <div class="modal-h">
+                        <h3>${isNew ? 'Nueva cotización' : 'Editar cotización'}</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field"><label>Título del trabajo</label><input id="f-titulo" value="${attr(c.titulo)}" placeholder="Ej. Diseño hidráulico de..."></div>
+                        <div class="row2">
+                            <div class="field"><label>Proyecto</label><input id="f-proyecto" list="dl-proyectos" value="${attr(c.proyecto)}"></div>
+                            <div class="field"><label>Cliente</label><input id="f-cliente" list="dl-clientes" value="${attr(c.cliente)}"></div>
+                        </div>
+                        <datalist id="dl-clientes">${S.clientes.map(cl => `<option value="${attr(cl.nombre)}">`).join('')}</datalist>
+                        <datalist id="dl-proyectos">${[...new Set(S.clientes.flatMap(cl => cl.proyectos))].map(p => `<option value="${attr(p)}">`).join('')}</datalist>
+                        <div class="row3">
+                            <div class="field"><label>Fecha</label><input type="date" id="f-fecha" value="${attr(c.fecha)}"></div>
+                            <div class="field"><label>Plazo (días)</label><input type="number" id="f-plazo" value="${c.plazoDias||0}"></div>
+                            <div class="field"><label>Estado</label>
+                                <select id="f-estado">
+                                    ${['borrador','enviada','aceptada','rechazada'].map(e => `<option value="${e}" ${c.estado===e?'selected':''}>${e}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <label style="display:block;font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-soft);margin-bottom:8px;">Ítems</label>
+                        <div class="items-block" id="items-block">
+                            ${c.items.map(it => itemRowHtml(it)).join('')}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-ghost" id="btn-add-item" style="margin-bottom:14px;">+ Agregar ítem</button>
+                        <div class="row2">
+                            <div class="field"><label>Descuento [Bs]</label><input type="number" step="0.01" id="f-descuento" value="${c.descuento||0}"></div>
+                            <div class="field"><label>&nbsp;</label><div style="font-size:12.5px;color:var(--text-soft);">Subtotal: <b id="f-subtotal-view">${bs(cotSubtotal(c))}</b></div></div>
+                        </div>
+                        <div class="field"><label>Entregables</label><textarea id="f-entregables" style="min-height:80px;">${esc(c.entregables||'')}</textarea></div>
+                        <div class="field"><label>Nota / alcance</label><textarea id="f-nota">${esc(c.nota||'')}</textarea></div>
+                        <div style="border-top:2px solid var(--primary);margin-top:6px;padding-top:12px;">
+                            <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;color:var(--primary);"><span>Monto final</span><span id="f-total-view">${bs(cotTotal(c))}</span></div>
+                        </div>
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-primary" id="m-save">${isNew ? 'Crear cotización' : 'Actualizar'}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            function recalc() {
+                const rows = overlay.querySelectorAll('.item-row');
+                let subtotal = 0;
+                rows.forEach(r => { 
+                    const pu = Number(r.querySelector('.it-pu').value) || 0;
+                    const cant = Number(r.querySelector('.it-cantidad').value) || 0;
+                    subtotal += pu * cant;
+                });
+                const desc = Number(overlay.querySelector('#f-descuento').value) || 0;
+                overlay.querySelector('#f-subtotal-view').textContent = bs(subtotal);
+                overlay.querySelector('#f-total-view').textContent = bs(subtotal - desc);
+            }
+
+            overlay.querySelector('#btn-add-item').onclick = () => {
+                const block = overlay.querySelector('#items-block');
+                block.insertAdjacentHTML('beforeend', itemRowHtml({ id: uid(), actividad: '', pu: 0, unidad: '', cantidad: 1 }));
+            };
+
+            overlay.querySelector('#items-block').addEventListener('click', e => {
+                if (e.target.classList.contains('item-remove')) {
+                    const row = e.target.closest('.item-row');
+                    if (overlay.querySelectorAll('.item-row').length > 1) { 
+                        row.remove(); 
+                        recalc(); 
+                    } else toast('La cotización necesita al menos un ítem.');
+                }
+            });
+
+            overlay.querySelector('input, textarea, select').addEventListener('input', recalc);
+            overlay.querySelector('#f-descuento').addEventListener('input', recalc);
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) overlay.remove();
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            overlay.querySelector('#m-save').onclick = async () => {
+                const items = [...overlay.querySelectorAll('.item-row')].map(r => ({
+                    id: r.dataset.item,
+                    actividad: r.querySelector('.it-actividad').value.trim(),
+                    pu: Number(r.querySelector('.it-pu').value) || 0,
+                    unidad: r.querySelector('.it-unidad').value.trim(),
+                    cantidad: Number(r.querySelector('.it-cantidad').value) || 0
+                }));
+                const titulo = overlay.querySelector('#f-titulo').value.trim();
+                if (!titulo) { toast('Ponle un título a la cotización.'); return; }
+                
+                const nuevo = {
+                    id: c.id,
+                    fecha: overlay.querySelector('#f-fecha').value,
+                    proyecto: overlay.querySelector('#f-proyecto').value.trim(),
+                    cliente: overlay.querySelector('#f-cliente').value.trim(),
+                    titulo,
+                    items,
+                    descuento: Number(overlay.querySelector('#f-descuento').value) || 0,
+                    plazoDias: Number(overlay.querySelector('#f-plazo').value) || 0,
+                    entregables: overlay.querySelector('#f-entregables').value.trim(),
+                    nota: overlay.querySelector('#f-nota').value.trim(),
+                    estado: overlay.querySelector('#f-estado').value
+                };
+                
+                if (isNew) S.cotizaciones.push(nuevo);
+                else S.cotizaciones = S.cotizaciones.map(x => x.id === nuevo.id ? nuevo : x);
+                
+                await saveCotizaciones(S.user?.uid);
+                
+                if (nuevo.cliente) {
+                    let cli = S.clientes.find(c => c.nombre.toLowerCase() === nuevo.cliente.toLowerCase());
+                    if (!cli) { cli = { id: uid(), nombre: nuevo.cliente, proyectos: [] };
+                        S.clientes.push(cli); }
+                    if (nuevo.proyecto && !cli.proyectos.some(p => p.toLowerCase() === nuevo.proyecto.toLowerCase())) {
+                        cli.proyectos.push(nuevo.proyecto);
+                    }
+                    await saveClientes(S.user?.uid);
+                }
+                
+                closeModal();
+                render();
+                toast(isNew ? '✅ Cotización creada.' : '✅ Cotización actualizada.');
+            };
+        }
+
+        function itemRowHtml(it) {
+            return `<div class="item-row" data-item="${it.id}" style="display:grid;grid-template-columns:1fr 90px 100px 70px 30px;gap:8px;align-items:start;margin-bottom:8px;">
+                <textarea class="it-actividad" placeholder="Descripción" style="min-height:36px;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:3px;font-family:'Inter',sans-serif;">${esc(it.actividad||'')}</textarea>
+                <input class="it-pu" type="number" step="0.01" placeholder="P.U." value="${it.pu||0}" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:3px;">
+                <input class="it-unidad" placeholder="Unidad" value="${attr(it.unidad||'')}" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:3px;">
+                <input class="it-cantidad" type="number" step="1" placeholder="Cant." value="${it.cantidad||1}" style="font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:3px;">
+                <button type="button" class="item-remove" style="background:none;border:none;color:#C0392B;cursor:pointer;font-size:18px;padding:2px 4px;">×</button>
+            </div>`;
+        }
+
         function openPagoModal(pago) {
             const isNew = !pago;
             const p = pago ? { ...pago } : { id: uid(), fecha: new Date().toISOString().slice(0, 10), cliente: '', descripcion: '', monto: 0, montoPagado: 0, fechaCompromiso: '', notas: '' };
@@ -1661,21 +1887,76 @@
             };
         }
 
-        function openCotModal(cot) {
-            toast('📝 Función de cotizaciones en desarrollo. Pronto disponible.');
-        }
-
         function openExpModal(exp) {
-            toast('📝 Función de proyectos en desarrollo. Pronto disponible.');
+            const isNew = !exp;
+            const e = exp ? { ...exp } : { id: uid(), entidad: '', objeto: '', monto: 0, cargo: '', desde: '', hasta: '' };
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:640px;">
+                    <div class="modal-h">
+                        <h3>${isNew ? 'Agregar proyecto' : 'Editar proyecto'}</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field"><label>Entidad / Empresa</label><input id="e-entidad" value="${attr(e.entidad)}" placeholder="Nombre de la entidad o empresa"></div>
+                        <div class="field"><label>Objeto / Proyecto</label><input id="e-objeto" value="${attr(e.objeto)}" placeholder="Descripción del proyecto"></div>
+                        <div class="row2">
+                            <div class="field"><label>Monto [Bs]</label><input type="number" step="0.01" id="e-monto" value="${e.monto}"></div>
+                            <div class="field"><label>Cargo</label><input id="e-cargo" value="${attr(e.cargo)}" placeholder="Ej. Especialista Hidráulico"></div>
+                        </div>
+                        <div class="row2">
+                            <div class="field"><label>Desde</label><input type="date" id="e-desde" value="${attr(e.desde)}"></div>
+                            <div class="field"><label>Hasta</label><input type="date" id="e-hasta" value="${attr(e.hasta)}"></div>
+                        </div>
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-primary" id="m-save">${isNew ? 'Agregar' : 'Actualizar'}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) overlay.remove();
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            overlay.querySelector('#m-save').onclick = async () => {
+                const nuevo = {
+                    id: e.id,
+                    entidad: document.getElementById('e-entidad').value.trim(),
+                    objeto: document.getElementById('e-objeto').value.trim(),
+                    monto: Number(document.getElementById('e-monto').value) || 0,
+                    cargo: document.getElementById('e-cargo').value.trim(),
+                    desde: document.getElementById('e-desde').value,
+                    hasta: document.getElementById('e-hasta').value
+                };
+                if (!nuevo.entidad || !nuevo.objeto) { toast('Completa entidad y objeto del proyecto.'); return; }
+                if (isNew) S.experiencia.push(nuevo);
+                else S.experiencia = S.experiencia.map(x => x.id === nuevo.id ? nuevo : x);
+                await saveExperiencia(S.user?.uid);
+                closeModal();
+                render();
+                toast(isNew ? '✅ Proyecto agregado.' : '✅ Proyecto actualizado.');
+            };
         }
 
         // ============================================================
-        // EXPORTAR HOJA DE VIDA
+        // EXPORTAR HOJA DE VIDA CON FORMATO PROFESIONAL
         // ============================================================
         function exportHojaVida() {
             try {
                 const wb = XLSX.utils.book_new();
                 
+                // Estilos básicos para el Excel (no todos los navegadores soportan estilos avanzados)
+                // Usamos un formato limpio y profesional
+                
+                // Hoja 1: Datos Personales
                 const dpData = [
                     ['HOJA DE VIDA ESPECIALISTA HIDRÓLOGO'],
                     [''],
@@ -1690,9 +1971,10 @@
                     ['Número de Registro Profesional', S.datosPersonales.registroProfesional || '']
                 ];
                 const ws1 = XLSX.utils.aoa_to_sheet(dpData);
-                ws1['!cols'] = [{ wch: 30 }, { wch: 40 }];
+                ws1['!cols'] = [{ wch: 32 }, { wch: 45 }];
                 XLSX.utils.book_append_sheet(wb, ws1, 'Datos Generales');
 
+                // Hoja 2: Formación Académica
                 const faData = [
                     ['2. FORMACIÓN ACADÉMICA'],
                     [''],
@@ -1702,21 +1984,23 @@
                     faData.push([f.institucion, fmtDateExcel(f.desde), fmtDateExcel(f.hasta), f.grado, fmtDateExcel(f.titulo)]);
                 });
                 const ws2 = XLSX.utils.aoa_to_sheet(faData);
-                ws2['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }, { wch: 50 }, { wch: 20 }];
+                ws2['!cols'] = [{ wch: 50 }, { wch: 16 }, { wch: 16 }, { wch: 55 }, { wch: 22 }];
                 XLSX.utils.book_append_sheet(wb, ws2, 'Formación Académica');
 
+                // Hoja 3: Cursos de Especialización
                 const ceData = [
                     ['3. CURSOS DE ESPECIALIZACIÓN'],
                     [''],
-                    ['Universidad / Institución', 'Desde', 'Hasta', 'Nombre del Curso', 'Duración en Horas']
+                    ['Universidad / Institución', 'Desde', 'Hasta', 'Nombre del Curso', 'Duración (Horas)']
                 ];
                 S.cursos.forEach(c => {
                     ceData.push([c.institucion, fmtDateExcel(c.desde), fmtDateExcel(c.hasta), c.curso, c.horas]);
                 });
                 const ws3 = XLSX.utils.aoa_to_sheet(ceData);
-                ws3['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }, { wch: 50 }, { wch: 18 }];
+                ws3['!cols'] = [{ wch: 48 }, { wch: 16 }, { wch: 16 }, { wch: 55 }, { wch: 18 }];
                 XLSX.utils.book_append_sheet(wb, ws3, 'Cursos Especialización');
 
+                // Hoja 4: Experiencia
                 const expData = [
                     ['4. EXPERIENCIA GENERAL'],
                     [''],
@@ -1727,19 +2011,168 @@
                     expData.push([i + 1, e.entidad, e.objeto, Number(e.monto).toFixed(2), e.cargo, fmtDateExcel(e.desde), fmtDateExcel(e.hasta)]);
                 });
                 const ws4 = XLSX.utils.aoa_to_sheet(expData);
-                ws4['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 50 }, { wch: 16 }, { wch: 30 }, { wch: 14 }, { wch: 14 }];
+                ws4['!cols'] = [{ wch: 6 }, { wch: 34 }, { wch: 55 }, { wch: 18 }, { wch: 34 }, { wch: 16 }, { wch: 16 }];
                 XLSX.utils.book_append_sheet(wb, ws4, 'Experiencia');
 
-                XLSX.writeFile(wb, `Hoja_Vida_Ing_Antequera_${new Date().toISOString().slice(0,10)}.xlsx`);
-                toast('✅ Hoja de vida exportada a Excel con todas las secciones.');
+                // Establecer estilos de celda para las cabeceras (en la medida de lo posible)
+                // Nota: XLSX.js no soporta estilos completos, pero podemos usar formato de número
+                const fileName = `Hoja_Vida_Ing_Antequera_${new Date().toISOString().slice(0,10)}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                toast('✅ Hoja de vida exportada a Excel con formato profesional.');
             } catch (e) {
                 console.error(e);
                 toast('Error al exportar: ' + e.message);
             }
         }
 
+        // ============================================================
+        // PDF EXPORT - COMPLETO
+        // ============================================================
         function exportPDF(c) {
-            toast('📄 Función de PDF en desarrollo.');
+            if (!c) { toast('No se encontró la cotización.'); return; }
+            if (!window.jspdf) { toast('La librería de PDF aún está cargando.'); return; }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const pageW = doc.internal.pageSize.getWidth();
+            const primary = [26, 74, 92]; // #1A4A5C
+            let y = 18;
+
+            // Logo
+            if (S.config.logo) {
+                try { doc.addImage(S.config.logo, 'PNG', 15, 10, 16, 16); } catch (e) {}
+            }
+
+            // Título
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor(...primary);
+            doc.text('COTIZACIÓN', pageW / 2, y, { align: 'center' });
+            y += 8;
+
+            // Título del trabajo
+            doc.setFontSize(12);
+            doc.setTextColor(30, 36, 41);
+            const titleLines = doc.splitTextToSize(c.titulo || '', 170);
+            doc.text(titleLines, pageW / 2, y, { align: 'center' });
+            y += titleLines.length * 6 + 4;
+
+            // Línea separadora
+            doc.setDrawColor(...primary);
+            doc.setLineWidth(0.5);
+            doc.line(15, y, pageW - 15, y);
+            y += 8;
+
+            // Datos del proyecto
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Proyecto:', 15, y);
+            doc.setFont('helvetica', 'normal');
+            const projLines = doc.splitTextToSize(c.proyecto || '—', 150);
+            doc.text(projLines, 38, y);
+            y += Math.max(5, projLines.length * 5);
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text('Cliente:', 15, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(c.cliente || '—', 38, y);
+            y += 8;
+
+            // Tabla de items
+            doc.autoTable({
+                startY: y,
+                head: [['Nº', 'Actividad', 'P.U. [Bs]', 'Unidad', 'Cant.', 'Total [Bs]']],
+                body: c.items.map((it, i) => [
+                    String(i + 1), 
+                    it.actividad || '', 
+                    (Number(it.pu) || 0).toFixed(2), 
+                    it.unidad || '', 
+                    String(it.cantidad || 0), 
+                    ((Number(it.pu) || 0) * (Number(it.cantidad) || 0)).toFixed(2)
+                ]),
+                styles: { fontSize: 8.5, cellPadding: 2.5, valign: 'top', textColor: [30, 36, 41] },
+                headStyles: { fillColor: primary, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+                alternateRowStyles: { fillColor: [245, 244, 238] },
+                columnStyles: {
+                    0: { cellWidth: 8, halign: 'center' },
+                    1: { cellWidth: 90 },
+                    2: { cellWidth: 22, halign: 'right' },
+                    3: { cellWidth: 28 },
+                    4: { cellWidth: 14, halign: 'center' },
+                    5: { cellWidth: 22, halign: 'right' }
+                },
+                margin: { left: 15, right: 15 }
+            });
+            y = doc.lastAutoTable.finalY + 8;
+
+            // Totales
+            const subtotal = cotSubtotal(c);
+            const total = cotTotal(c);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(60, 66, 71);
+            doc.text(`Subtotal [Bs]: ${subtotal.toFixed(2)}`, pageW - 15, y, { align: 'right' });
+            y += 6;
+            if (Number(c.descuento) > 0) {
+                doc.text(`Descuento / anticipo [Bs]: ${Number(c.descuento).toFixed(2)}`, pageW - 15, y, { align: 'right' });
+                y += 6;
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(...primary);
+            doc.text(`Monto final [Bs]: ${total.toFixed(2)}`, pageW - 15, y, { align: 'right' });
+            y += 10;
+
+            // Plazo
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(30, 36, 41);
+            doc.text(`Plazo a partir del anticipo: ${c.plazoDias||0} días`, 15, y);
+            y += 10;
+
+            // Entregables
+            if (c.entregables) {
+                if (y > 245) { doc.addPage(); y = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.setTextColor(30, 36, 41);
+                doc.text('Producto a presentar', 15, y);
+                y += 5;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(60, 66, 71);
+                const delLines = doc.splitTextToSize(c.entregables, pageW - 30);
+                doc.text(delLines, 15, y);
+                y += delLines.length * 4 + 6;
+            }
+
+            // Nota
+            if (c.nota) {
+                if (y > 255) { doc.addPage(); y = 20; }
+                doc.setFontSize(8);
+                doc.setTextColor(100, 105, 110);
+                const noteLines = doc.splitTextToSize(`Nota: ${c.nota}`, pageW - 30);
+                doc.text(noteLines, 15, y);
+                y += noteLines.length * 4 + 10;
+            }
+
+            // Firma
+            if (y > 255) { doc.addPage(); y = 20; }
+            doc.setFontSize(9);
+            doc.setTextColor(30, 36, 41);
+            doc.text(`Fecha: ${fmtDate(c.fecha)}`, 15, y);
+            y += 16;
+            doc.setFont('helvetica', 'bold');
+            doc.text(S.config.nombre || '', 15, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text(S.config.rni || '', 15, y);
+
+            // Guardar
+            const safeName = (c.proyecto || 'cotizacion').replace(/[^a-z0-9]+/gi, '_').slice(0, 40);
+            doc.save(`Cotizacion_${safeName}_${c.fecha}.pdf`);
+            toast('📄 PDF generado correctamente.');
         }
 
         // ============================================================
@@ -1859,6 +2292,130 @@
                 });
             }
 
+            // Editar hoja de vida
+            const btnEditCV = document.getElementById('btn-edit-cv');
+            if (btnEditCV) {
+                btnEditCV.onclick = () => {
+                    S.editingCV = !S.editingCV;
+                    render();
+                };
+            }
+
+            // Guardar hoja de vida
+            const btnSaveCV = document.getElementById('btn-save-cv');
+            if (btnSaveCV) {
+                btnSaveCV.onclick = async () => {
+                    // Guardar datos personales
+                    S.datosPersonales.nombre = document.getElementById('cv-nombre').value.trim();
+                    S.datosPersonales.ci = document.getElementById('cv-ci').value.trim();
+                    S.datosPersonales.lugarExpedicion = document.getElementById('cv-lugar').value.trim();
+                    S.datosPersonales.edad = document.getElementById('cv-edad').value.trim();
+                    S.datosPersonales.nacionalidad = document.getElementById('cv-nacionalidad').value.trim();
+                    S.datosPersonales.profesion = document.getElementById('cv-profesion').value.trim();
+                    S.datosPersonales.registroProfesional = document.getElementById('cv-rni').value.trim();
+
+                    // Guardar formación
+                    const formacionRows = document.querySelectorAll('#cv-formacion-container .row4');
+                    S.formacion = [];
+                    formacionRows.forEach(row => {
+                        const institucion = row.querySelector('.cv-f-institucion').value.trim();
+                        const desde = row.querySelector('.cv-f-desde').value;
+                        const hasta = row.querySelector('.cv-f-hasta').value;
+                        const grado = row.querySelector('.cv-f-grado').value.trim();
+                        if (institucion && grado) {
+                            S.formacion.push({ institucion, desde, hasta, grado, titulo: '' });
+                        }
+                    });
+
+                    // Guardar cursos
+                    const cursosRows = document.querySelectorAll('#cv-cursos-container .row4');
+                    S.cursos = [];
+                    cursosRows.forEach(row => {
+                        const institucion = row.querySelector('.cv-c-institucion').value.trim();
+                        const desde = row.querySelector('.cv-c-desde').value;
+                        const hasta = row.querySelector('.cv-c-hasta').value;
+                        const curso = row.querySelector('.cv-c-curso').value.trim();
+                        const horas = Number(row.querySelector('.cv-c-horas').value) || 0;
+                        if (institucion && curso) {
+                            S.cursos.push({ institucion, desde, hasta, curso, horas });
+                        }
+                    });
+
+                    await saveDatosPersonales(S.user?.uid);
+                    await saveFormacion(S.user?.uid);
+                    await saveCursos(S.user?.uid);
+                    
+                    S.editingCV = false;
+                    render();
+                    toast('✅ Hoja de vida actualizada correctamente.');
+                };
+            }
+
+            // Agregar formación
+            const btnAddFormacion = document.getElementById('cv-add-formacion');
+            if (btnAddFormacion) {
+                btnAddFormacion.onclick = () => {
+                    const container = document.getElementById('cv-formacion-container');
+                    const idx = container.children.length;
+                    const div = document.createElement('div');
+                    div.className = 'row4';
+                    div.style.marginBottom = '8px';
+                    div.style.alignItems = 'center';
+                    div.dataset.fIdx = idx;
+                    div.innerHTML = `
+                        <input placeholder="Institución" class="cv-f-institucion">
+                        <input type="date" class="cv-f-desde">
+                        <input type="date" class="cv-f-hasta">
+                        <input placeholder="Grado" class="cv-f-grado">
+                        <button class="btn btn-sm btn-danger cv-f-remove" style="padding:4px 8px;">✕</button>
+                    `;
+                    container.appendChild(div);
+                };
+            }
+
+            // Eliminar formación (delegación)
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('cv-f-remove')) {
+                    const row = e.target.closest('.row4');
+                    if (row && document.querySelectorAll('#cv-formacion-container .row4').length > 1) {
+                        row.remove();
+                    } else {
+                        toast('Debe haber al menos una formación.');
+                    }
+                }
+                if (e.target.classList.contains('cv-c-remove')) {
+                    const row = e.target.closest('.row4');
+                    if (row && document.querySelectorAll('#cv-cursos-container .row4').length > 1) {
+                        row.remove();
+                    } else {
+                        toast('Debe haber al menos un curso.');
+                    }
+                }
+            });
+
+            // Agregar curso
+            const btnAddCurso = document.getElementById('cv-add-curso');
+            if (btnAddCurso) {
+                btnAddCurso.onclick = () => {
+                    const container = document.getElementById('cv-cursos-container');
+                    const idx = container.children.length;
+                    const div = document.createElement('div');
+                    div.className = 'row4';
+                    div.style.marginBottom = '8px';
+                    div.style.alignItems = 'center';
+                    div.dataset.cIdx = idx;
+                    div.innerHTML = `
+                        <input placeholder="Institución" class="cv-c-institucion">
+                        <input type="date" class="cv-c-desde">
+                        <input type="date" class="cv-c-hasta">
+                        <input placeholder="Curso" class="cv-c-curso">
+                        <input type="number" placeholder="Horas" class="cv-c-horas" style="width:70px;">
+                        <button class="btn btn-sm btn-danger cv-c-remove" style="padding:4px 8px;">✕</button>
+                    `;
+                    container.appendChild(div);
+                };
+            }
+
             // Cotizaciones
             const btnNew = document.getElementById('btn-new-cot');
             if (btnNew) btnNew.onclick = () => openCotModal(null);
@@ -1866,6 +2423,7 @@
             main.querySelectorAll('[data-pdf]').forEach(b => b.onclick = () => exportPDF(S.cotizaciones.find(c => c.id === b.dataset.pdf)));
             main.querySelectorAll('[data-dup-cot]').forEach(b => b.onclick = async () => {
                 const orig = S.cotizaciones.find(c => c.id === b.dataset.dupCot);
+                if (!orig) return;
                 const copy = JSON.parse(JSON.stringify(orig));
                 copy.id = uid();
                 copy.items = copy.items.map(it => ({ ...it, id: uid() }));
@@ -1874,7 +2432,7 @@
                 S.cotizaciones.push(copy);
                 await saveCotizaciones(S.user?.uid);
                 render();
-                toast('Cotización duplicada.');
+                toast('✅ Cotización duplicada.');
             });
             main.querySelectorAll('[data-del-cot]').forEach(b => b.onclick = async () => {
                 if (!confirm('¿Eliminar esta cotización?')) return;
@@ -1931,6 +2489,7 @@
             main.querySelectorAll('[data-add-proy]').forEach(b => b.onclick = async () => {
                 const cid = b.dataset.addProy;
                 const input = main.querySelector(`[data-new-proy-input="${cid}"]`);
+                if (!input) return;
                 const val = input.value.trim();
                 if (!val) return;
                 const cli = S.clientes.find(c => c.id === cid);
