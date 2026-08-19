@@ -604,10 +604,46 @@
 
     <script>
         /* ============================================================
-           CONFIGURACIÓN
+           CONFIGURACIÓN - DATOS DEL PROFESIONAL
            ============================================================ */
         const LOGO_URL = "https://raw.githubusercontent.com/tu-usuario/tu-repo/main/logo.png";
         
+        // Datos personales para la hoja de vida
+        const DATOS_PERSONALES = {
+            nombre: 'CARLOS ANDRES ANTEQUERA ENCINAS',
+            ci: '7503322',
+            lugarExpedicion: 'CHUQUISACA',
+            edad: '34',
+            nacionalidad: 'BOLIVIANA',
+            profesion: 'INGENIERO CIVIL',
+            registroProfesional: '28.106'
+        };
+
+        // Formación académica
+        const FORMACION_ACADEMICA = [
+            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2008-02-01', hasta: '2012-12-01', grado: 'LICENCIATURA EN INGENIERIA CIVIL', titulo: '2013-03-15' },
+            { institucion: 'Universidad San Sebastián Chile', desde: '2014-05-01', hasta: '2014-10-01', grado: 'DIPLOMADO: Diseño en Ingeniería Hidráulica', titulo: '2014-10-01' },
+            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2016-07-01', hasta: '2017-12-01', grado: 'ESPECIALIDAD SUPERIOR En Formulación Y Evaluación De Proyectos De Manejo Integral De Cuencas', titulo: '2019-02-04' },
+            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2017-07-01', hasta: '2018-12-01', grado: 'MAESTRÍA: en ingeniería Hidráulica', titulo: '2023-08-21' }
+        ];
+
+        // Cursos de especialización
+        const CURSOS_ESPECIALIZACION = [
+            { institucion: 'Capacitación Profesional Ingeniería Civil Bolivia EMPRESA CONSTRUCTORA FEYOBRA', desde: '2021-02-01', hasta: '2021-02-01', curso: 'Modelación numérica de obras Hidráulicas con el software Iber', horas: 30 },
+            { institucion: 'Ministerio de Medio Ambiente y Agua VRHR UCEP-MiRiego', desde: '2019-11-01', hasta: '2020-04-01', curso: 'Riego tecnificado para técnicos de Acompañantes / Asistencia Técnica / Seguimiento y Evaluación técnica', horas: 120 },
+            { institucion: 'Ministerio de Medio Ambiente y Agua', desde: '2018-10-01', hasta: '2018-10-01', curso: 'Diseño Optimo de redes de riego a turnos Mediante el Software GESTAR', horas: 20 },
+            { institucion: 'Cooperación Suiza, Ministerio de Medio Ambiente y Agua', desde: '2017-02-01', hasta: '2017-07-01', curso: 'Cálculo e interpretación del balance hídrico superficial', horas: 48 },
+            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-05-08', hasta: '2014-05-14', curso: 'HIDROLOGIA APLICADA', horas: 22 },
+            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-06-09', hasta: '2014-06-13', curso: 'SOCAVACION EN RIOS Y PUENTES', horas: 22 },
+            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-07-09', hasta: '2014-07-12', curso: 'OBRAS HIDRAULICAS MENORES', horas: 22 },
+            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-08-28', hasta: '2014-10-04', curso: 'PRESAS Y EMBALSES', horas: 22 },
+            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-09-29', hasta: '2014-10-06', curso: 'PROYECTOS DE RIEGO', horas: 22 },
+            { institucion: 'SEDERI LA PAZ, Universidad Mayor de San Andrés', desde: '2013-08-01', hasta: '2013-08-01', curso: 'Diseño de Obras Hidráulicas para riego y Agua Potable', horas: 32 },
+            { institucion: 'Sociedad de Ingenieros de Bolivia Departamental Chuquisaca', desde: '2012-04-01', hasta: '2012-04-01', curso: 'Hidrología Aplicada Computarizada para Diseño de Obras Hidráulicas', horas: 32 },
+            { institucion: 'CENTRO DE CAPACITACIÓN "C.E.P.R.A."', desde: '2022-10-01', hasta: '2022-10-01', curso: 'SEWERCAD - APLICADO A REDES DE ALCANTARILLADO SANITARIO Y PLUVIAL', horas: 30 },
+            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2021-09-01', hasta: '2021-09-01', curso: 'Docente del curso de formación: "Uso de EPANET"', horas: 30 }
+        ];
+
         const DEFAULT_CONFIG = {
             nombre: 'M.Sc. Ing. Carlos A. Antequera E.',
             rni: 'RNI: 28.106 Ingeniero Civil - Especialista Hidrólogo - Hidráulico',
@@ -622,6 +658,9 @@
             pagos: [],
             clientes: [],
             experiencia: [],
+            formacion: [...FORMACION_ACADEMICA],
+            cursos: [...CURSOS_ESPECIALIZACION],
+            datosPersonales: { ...DATOS_PERSONALES },
             config: { ...DEFAULT_CONFIG },
             user: null,
             authReady: false
@@ -631,6 +670,7 @@
         const bs = (n) => 'Bs ' + (Number(n) || 0).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const fmtDate = (s) => { if (!s) return '—'; const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' }); };
         const fmtDateShort = (s) => { if (!s) return '—'; const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('es-BO', { day: '2-digit', month: 'short' }); };
+        const fmtDateExcel = (s) => { if (!s) return ''; const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' }); };
         const diffDays = (a, b) => { const d1 = new Date(a + 'T00:00:00'), d2 = new Date(b + 'T00:00:00'); return Math.max(0, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24))); };
 
         /* ============================================================
@@ -795,43 +835,43 @@
            ============================================================ */
         function seedExperiencia() {
             return [
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Tarabuco Fase III', monto: 479218.75, cargo: 'Fiscal de obra', desde: '2013-06-05', hasta: '2013-10-29' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN SISTEMA DE RIEGO SAN ANTONIO', monto: 125000, cargo: 'Especialista Hidráulico', desde: '2014-03-15', hasta: '2014-05-24' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones MIC Parapeti Fase IV', monto: 939415, cargo: 'Fiscal de obra', desde: '2014-05-02', hasta: '2014-09-30' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS, ATAJADOS Y MICRORIEGOS COMUNIDAD SAN BLAS ALTO', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Proyecto Manejo Integral Cuenca Tarabuco Fase III', monto: 479218.75, cargo: 'Fiscal de obra', desde: '2013-06-05', hasta: '2013-10-29' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO A NIVEL TESA "CONSTRUCCIÓN SISTEMA DE RIEGO COMUNIDAD SAN ANTONIO"', monto: 125000, cargo: 'Especialista Hidráulico', desde: '2014-03-15', hasta: '2014-05-24' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales MIC Parapeti Zona Alta Fase IV', monto: 939415, cargo: 'Fiscal de obra', desde: '2014-05-02', hasta: '2014-09-30' },
                 { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Alcantarillado Sanitario La Tapera', monto: 908211.34, cargo: 'Fiscal de obra', desde: '2015-01-01', hasta: '2015-12-31' },
                 { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Alcantarillado Sanitario Villa Charcas', monto: 4259084.31, cargo: 'Fiscal de obra', desde: '2015-01-01', hasta: '2015-12-31' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Fase I', monto: 670000, cargo: 'Supervisor de obra', desde: '2015-07-27', hasta: '2015-11-20' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Diques de Gavión Represas Yana Khakha', monto: 2689305.45, cargo: 'Fiscal de obra', desde: '2015-10-27', hasta: '2017-12-19' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'AJUSTE ESTUDIO CONSTRUCCIÓN REPRESA CHIUTARA', monto: 245000, cargo: 'Especialista Hidráulico', desde: '2016-03-22', hasta: '2016-06-25' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS HUACARETA', monto: 508000, cargo: 'Especialista Hidráulico', desde: '2016-07-28', hasta: '2017-03-06' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION APROVECHAMIENTO RECURSOS HIDRICOS YERENDA', monto: 39360, cargo: 'Especialista Hidráulico', desde: '2016-10-26', hasta: '2017-06-04' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sauce Molino', monto: 458089.49, cargo: 'Fiscal de obra', desde: '2016-10-17', hasta: '2016-12-28' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de diques y sistemas de riego MIC Rio Presto', monto: 1645343.96, cargo: 'Fiscal de obra', desde: '2016-10-26', hasta: '2017-05-31' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas San Juan', monto: 356979.6, cargo: 'Fiscal de obra', desde: '2016-11-23', hasta: '2017-03-23' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE MICRORIEGO MOLANI', monto: 120000, cargo: 'Especialista Hidráulico', desde: '2016-12-14', hasta: '2017-05-13' },
-                { id: uid(), entidad: 'Consultora M&R', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE MICRORIEGO PUCA PAMPA', monto: 198000, cargo: 'Especialista Hidrología', desde: '2017-01-01', hasta: '2017-07-01' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sopachuy Cuenca Media', monto: 407906.13, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones PMIC Horcas Sopachuy Cuenca Baja', monto: 367198.18, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Obras Hidráulicas MIC Rio San Lucas', monto: 1997886.05, cargo: 'Fiscal de obra', desde: '2017-12-05', hasta: '2018-12-28' },
-                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION MEJORAMIENTO CANALES DE RIEGO CULPINA', monto: 195000, cargo: 'Especialista Hidráulico', desde: '2018-03-28', hasta: '2019-12-24' },
-                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'EDTP MEJORAMIENTO DE RIEGO ISCU ISCU', monto: 250468.72, cargo: 'Especialista Hidráulico', desde: '2018-06-01', hasta: '2018-09-05' },
-                { id: uid(), entidad: 'Constructora GUTIQUIGAM', objeto: 'CONST. CANAL DE RIEGO SAUSIWAJ', monto: 1292639.82, cargo: 'Especialista Hidráulico', desde: '2018-08-15', hasta: '2019-02-22' },
-                { id: uid(), entidad: 'CONSTICONS SRL', objeto: 'EDTP CONSTRUCCIÓN REPRESA Y RIEGO TURURUMBA', monto: 685229.89, cargo: 'Especialista Hidrología', desde: '2019-03-01', hasta: '2019-11-30' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Potable Achuma Z. Alta', monto: 597784.29, cargo: 'Fiscal de obra', desde: '2019-02-12', hasta: '2019-09-04' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Ampl. Sist. Alcantarillado Sanitario Escana', monto: 739381.5, cargo: 'Fiscal de obra', desde: '2019-02-02', hasta: '2019-08-20' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Agua Potable Chiri', monto: 675081.8, cargo: 'Fiscal de obra', desde: '2019-03-07', hasta: '2019-08-03' },
-                { id: uid(), entidad: 'CCOAS SRL', objeto: 'AJUSTE EDTP CONSTRUCCIÓN PRESA Y RIEGO ATOSILLO', monto: 340000, cargo: 'Especialista Hidráulico', desde: '2019-07-01', hasta: '2019-10-19' },
-                { id: uid(), entidad: 'Asociación Accidental E&M', objeto: 'Supervisión trasvase y planta potabilizadora Sucre', monto: 520000, cargo: 'Especialista Hidráulico', desde: '2021-05-25', hasta: '2021-12-23' },
-                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP MANEJO INTEGRAL MICROCUENCA TARACACHI', monto: 990000, cargo: 'Especialista Hidráulico', desde: '2021-12-27', hasta: '2022-04-26' },
-                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP CONSTRUCCION REPRESA QUEBRADA ONDA', monto: 90000, cargo: 'Especialista Hidráulico', desde: '2021-10-28', hasta: '2022-10-07' },
-                { id: uid(), entidad: 'ROES CONSULTORES', objeto: 'INTERCONEXIONES OBRA DE TOMA Y PTAP COBIJA', monto: 100000, cargo: 'Especialista Hidráulico', desde: '2022-01-02', hasta: '2022-12-20' },
-                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Sup. Const. Sistema de Riego Pedernal Monteagudo', monto: 50445314.59, cargo: 'Especialista Hidráulico', desde: '2020-05-15', hasta: '2023-06-08' },
-                { id: uid(), entidad: 'MMAyA UCP PAAP', objeto: 'CONSULTOR ESPECIALISTA HIDROLOGO RIBERALTA', monto: 41000, cargo: 'Especialista Hidrólogo', desde: '2023-08-02', hasta: '2023-09-01' },
-                { id: uid(), entidad: 'Consultora AIPPA', objeto: 'EDTP CONSTRUCCIÓN SISTEMA DE RIEGO ISLUCO', monto: 250000, cargo: 'Especialista Hidráulico', desde: '2023-05-23', hasta: '2023-09-25' },
-                { id: uid(), entidad: 'Asociación El Quebracho', objeto: 'Supervisión Construcción Riego Pampas De Padilla', monto: 13073203.72, cargo: 'Especialista Hidráulico', desde: '2022-02-25', hasta: '2024-03-29' },
-                { id: uid(), entidad: 'Asociación El Quebracho', objeto: 'EDTP CONSTRUCCIÓN PRESA RUJERO GRANDE', monto: 1700232.7, cargo: 'Especialista Hidrología', desde: '2023-02-02', hasta: '2024-04-23' },
-                { id: uid(), entidad: 'Asociación del SUR', objeto: 'Supervisión Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones transversales y Longitudinales PMIC Horcas Fase I', monto: 670000, cargo: 'Supervisor de obra', desde: '2015-07-27', hasta: '2015-11-20' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Diques de Gavión y HºCº Proyecto Manejo Integral Cuenca Represas Yana Khakha y Challhua Mayu', monto: 2689305.45, cargo: 'Fiscal de obra', desde: '2015-10-27', hasta: '2017-12-19' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'AJUSTE Y COMPLEMENTACIÓN DEL ESTUDIO DEL PROYECTO CONSTRUCCIÓN REPRESA CHIUTARA (POTOSÍ)', monto: 245000, cargo: 'Especialista Hidráulico', desde: '2016-03-22', hasta: '2016-06-25' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION TECNICA APROVECHAMIENTO DE LOS RECURSOS HIDRICOS EN EL MUNICIPIO DE HUACARETA PAQUETE 4: USO DE FUENTE DE AGUA PARA AFRONTAR LA SEQUIA AGUA BUENA', monto: 508000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2016-07-28', hasta: '2017-03-06' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISIÓN TECNICA APROVECHAMIENTO DE LOS RECURSOS HIDRICOS EN EL MUNICIPIO DE HUACARETA PAQUETE 5: USO DE FUENTE DE AGUA PARA AFRONTAR LA SEQUIA YERENDA', monto: 39360, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2016-10-26', hasta: '2017-06-04' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales, PMIC Horcas Fase II (Comunidad Sauce Molino)', monto: 458089.49, cargo: 'Fiscal de obra', desde: '2016-10-17', hasta: '2016-12-28' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de diques Transversales de Gavión, Atajados y Sistemas de Riego tecnificado con el Proyecto MIC - Rio Presto', monto: 1645343.96, cargo: 'Fiscal de obra', desde: '2016-10-26', hasta: '2017-05-31' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales, PMIC Horcas Fase II (Comunidad San Juan de Horcas)', monto: 356979.6, cargo: 'Fiscal de obra', desde: '2016-11-23', hasta: '2017-03-23' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN CONSTRUCCIÓN SISTEMA DE MICRORIEGO EN LA COMUNIDAD DE MOLANI', monto: 120000, cargo: 'Especialista Hidráulico', desde: '2016-12-14', hasta: '2017-05-13' },
+                { id: uid(), entidad: 'Consultora M&R', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN CONSTRUCCIÓN SISTEMA DE MICRORIEGO COMUNIDAD DE PUCA PAMPA', monto: 198000, cargo: 'Especialista en Hidrología e Hidráulico', desde: '2017-01-01', hasta: '2017-07-01' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones transversales y Longitudinales PMIC Horcas Sopachuy Fase III Zona Cuenca Media', monto: 407906.13, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales PMIC Horcas Sopachuy Fase III Zona Cuenca Baja', monto: 367198.18, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
+                { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Obras Hidráulicas MIC Rio San Lucas Zona Alta', monto: 1997886.05, cargo: 'Fiscal de obra', desde: '2017-12-05', hasta: '2018-12-28' },
+                { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISÓN TECNICA MEJORAMIENTO DE LOS CANALES DE RIEGO AREA URBANA CULPINA, CON ENFOQUE DE CAMBIO CLIMATICO', monto: 195000, cargo: 'Especialista Hidráulico', desde: '2018-03-28', hasta: '2019-12-24' },
+                { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN PROYECTO MEJORAMIENTO DE RIEGO ISCU ISCU, YOCALLA, POTOSI', monto: 250468.72, cargo: 'Especialista Hidráulico', desde: '2018-06-01', hasta: '2018-09-05' },
+                { id: uid(), entidad: 'Constructora y Consultora GUTIQUIGAM', objeto: 'CONST. CANAL DE RIEGO SAUSIWAJ (EDTP)', monto: 1292639.82, cargo: 'Especialista Hidráulico', desde: '2018-08-15', hasta: '2019-02-22' },
+                { id: uid(), entidad: 'Consultora y Constructora CONSTICONS SRL', objeto: 'EDTP CONSTRUCCIÓN REPRESA Y SISTEMA DE RIEGO TURURUMBA', monto: 685229.89, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2019-03-01', hasta: '2019-11-30' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Potable Achuma Z. Alta (Camataqui C. Villa Abecia)', monto: 597784.29, cargo: 'Fiscal de obra', desde: '2019-02-12', hasta: '2019-09-04' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Ampl. Sist. Alcantarillado Sanitario Escana (Yamparáez)', monto: 739381.5, cargo: 'Fiscal de obra', desde: '2019-02-02', hasta: '2019-08-20' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Agua Potable Chiri (Camataqui C. Villa Abecia)', monto: 675081.8, cargo: 'Fiscal de obra', desde: '2019-03-07', hasta: '2019-08-03' },
+                { id: uid(), entidad: 'Constructora y Consultora Acción Socio Ambiental CCOAS SRL', objeto: 'AJUSTE Y COMPLEMENTACIÓN DEL ESTUDIO A NIVEL EDTP CONSTRUCCIÓN PRESA Y RIEGO TECNIFICADO EN ATOSILLO', monto: 340000, cargo: 'Especialista en Diseño Hidráulico e Hidrológico', desde: '2019-07-01', hasta: '2019-10-19' },
+                { id: uid(), entidad: 'Asociación Accidental "E&M"', objeto: 'Supervisión técnica Construcción trasvase y planta potabilizadora para las zonas altas Sucre', monto: 520000, cargo: 'Especialista Hidráulico', desde: '2021-05-25', hasta: '2021-12-23' },
+                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP MANEJO INTEGRAL DE LA MICROCUENCA TARACACHI MUNICIPIO DE ARQUE CBBA', monto: 990000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2021-12-27', hasta: '2022-04-26' },
+                { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP CONSTRUCCION REPRESA Y SISTEMA DE RIEGO QUEBRADA ONDA (CKOCHAS)', monto: 90000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2021-10-28', hasta: '2022-10-07' },
+                { id: uid(), entidad: 'ROES CONSULTORES Y ASOCIADOS', objeto: 'CONSTRUCCIÓN INTERCONEXIONES DE LA OBRA DE TOMA Y PTAP PARA EL SISTEMA DE AGUA POTABLE COBIJA', monto: 100000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2022-01-02', hasta: '2022-12-20' },
+                { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Sup. Tec. Y Ambiental Const. Sistema de Riego Pedernal Monteagudo', monto: 50445314.59, cargo: 'Especialista Hidráulico', desde: '2020-05-15', hasta: '2023-06-08' },
+                { id: uid(), entidad: 'MINISTERIO DE MEDIO AMBIENTE Y AGUA UCP PAAP', objeto: 'CONSULTOR ESPECIALISTA HIDROLOGO PROYECTO CONCLUSIÓN PLANTA DE TRATAMIENTO DE AGUA POTABLE RIBERALTA', monto: 41000, cargo: 'Especialista Hidrólogo', desde: '2023-08-02', hasta: '2023-09-01' },
+                { id: uid(), entidad: 'Consultora AIPPA', objeto: 'Estudio Diseño Técnico de Preinversión Construcción Sistema de Riego Isluco (Ravelo)', monto: 250000, cargo: 'Especialista Hidráulico - Hidrólogo', desde: '2023-05-23', hasta: '2023-09-25' },
+                { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Supervisión Técnica Y Ambiental Construcción Sistema De Riego Pampas De Padilla Lote 2-A', monto: 13073203.72, cargo: 'Especialista Hidráulico - Hidrólogo', desde: '2022-02-25', hasta: '2024-03-29' },
+                { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Estudio de Diseño Técnico de Preinversión (EDTP) "Construcción Presa Rujero Grande"', monto: 1700232.7, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2023-02-02', hasta: '2024-04-23' },
+                { id: uid(), entidad: 'Asociación Accidental del SUR', objeto: 'Servicio de Consultoría de Supervisión para el Proyecto Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista en Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
             ];
         }
 
@@ -1049,11 +1089,11 @@
         function viewExperiencia() {
             const rows = [...S.experiencia].sort((a, b) => (b.desde || '').localeCompare(a.desde || ''));
             const now = new Date();
-            const fiveYearsAgo = new Date(now);
-            fiveYearsAgo.setFullYear(now.getFullYear() - 5);
-            const recent = S.experiencia.filter(e => new Date(e.desde + 'T00:00:00') >= fiveYearsAgo).sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
+            const tenYearsAgo = new Date(now);
+            tenYearsAgo.setFullYear(now.getFullYear() - 10);
+            const recent = S.experiencia.filter(e => new Date(e.desde + 'T00:00:00') >= tenYearsAgo).sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
 
-            let minDate = fiveYearsAgo;
+            let minDate = tenYearsAgo;
             let maxDate = now;
             if (recent.length) {
                 const first = new Date(recent[0].desde + 'T00:00:00');
@@ -1065,15 +1105,15 @@
 
             return `
             <div class="page-head">
-                <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados, con diagrama de Gantt y exportación a Excel.</p></div>
+                <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados (últimos 10 años), con diagrama de Gantt y exportación a Excel con hoja de vida completa.</p></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-primary" id="btn-new-exp">${ICONS.plus} Agregar proyecto</button>
-                    <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar Excel</button>
+                    <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar hoja de vida a Excel</button>
                 </div>
             </div>
 
             <div class="panel" style="margin-bottom:20px;">
-                <div class="panel-h"><h3>Diagrama de Gantt — Últimos 5 años</h3></div>
+                <div class="panel-h"><h3>Diagrama de Gantt — Últimos 10 años</h3></div>
                 <div class="panel-body">
                     ${recent.length ? `
                         <div class="gantt-legend">
@@ -1099,7 +1139,7 @@
                                 </div>`;
                             }).join('')}
                         </div>
-                    ` : '<p style="color:var(--text-soft);font-size:13px;">No hay proyectos en los últimos 5 años.</p>'}
+                    ` : '<p style="color:var(--text-soft);font-size:13px;">No hay proyectos en los últimos 10 años.</p>'}
                 </div>
             </div>
 
@@ -1174,6 +1214,104 @@
 
                 <button class="btn btn-primary" id="btn-save-cfg">Guardar configuración</button>
             </div></div>`;
+        }
+
+        /* ============================================================
+           EXPORTAR A EXCEL - HOJA DE VIDA COMPLETA
+           ============================================================ */
+        function exportExcelCompleto() {
+            try {
+                const wb = XLSX.utils.book_new();
+                
+                // ----- HOJA 1: DATOS PERSONALES -----
+                const datosPersonalesData = [
+                    ['HOJA DE VIDA ESPECIALISTA HIDRÓLOGO'],
+                    [''],
+                    ['1. DATOS GENERALES'],
+                    [''],
+                    ['Nombre Completo', S.datosPersonales.nombre],
+                    ['Cédula de Identidad', S.datosPersonales.ci],
+                    ['Lugar de Expedición', S.datosPersonales.lugarExpedicion],
+                    ['Edad', S.datosPersonales.edad],
+                    ['Nacionalidad', S.datosPersonales.nacionalidad],
+                    ['Profesión', S.datosPersonales.profesion],
+                    ['Número de Registro Profesional', S.datosPersonales.registroProfesional]
+                ];
+                const ws1 = XLSX.utils.aoa_to_sheet(datosPersonalesData);
+                ws1['!cols'] = [{ wch: 30 }, { wch: 40 }];
+                XLSX.utils.book_append_sheet(wb, ws1, 'Datos Generales');
+
+                // ----- HOJA 2: FORMACIÓN ACADÉMICA -----
+                const formacionData = [
+                    ['2. FORMACIÓN ACADÉMICA'],
+                    [''],
+                    ['Universidad / Institución', 'Desde', 'Hasta', 'Grado Académico', 'Título en Provisión Nacional']
+                ];
+                S.formacion.forEach(f => {
+                    formacionData.push([
+                        f.institucion,
+                        fmtDateExcel(f.desde),
+                        fmtDateExcel(f.hasta),
+                        f.grado,
+                        fmtDateExcel(f.titulo)
+                    ]);
+                });
+                const ws2 = XLSX.utils.aoa_to_sheet(formacionData);
+                ws2['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }, { wch: 50 }, { wch: 20 }];
+                XLSX.utils.book_append_sheet(wb, ws2, 'Formación Académica');
+
+                // ----- HOJA 3: CURSOS DE ESPECIALIZACIÓN -----
+                const cursosData = [
+                    ['3. CURSOS DE ESPECIALIZACIÓN'],
+                    [''],
+                    ['Universidad / Institución', 'Desde', 'Hasta', 'Nombre del Curso', 'Duración en Horas']
+                ];
+                S.cursos.forEach(c => {
+                    cursosData.push([
+                        c.institucion,
+                        fmtDateExcel(c.desde),
+                        fmtDateExcel(c.hasta),
+                        c.curso,
+                        c.horas
+                    ]);
+                });
+                const ws3 = XLSX.utils.aoa_to_sheet(cursosData);
+                ws3['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }, { wch: 50 }, { wch: 18 }];
+                XLSX.utils.book_append_sheet(wb, ws3, 'Cursos Especialización');
+
+                // ----- HOJA 4: EXPERIENCIA (últimos 10 años) -----
+                const now = new Date();
+                const tenYearsAgo = new Date(now);
+                tenYearsAgo.setFullYear(now.getFullYear() - 10);
+                const expFiltrada = S.experiencia.filter(e => new Date(e.desde + 'T00:00:00') >= tenYearsAgo);
+                const expData = [
+                    ['4. EXPERIENCIA GENERAL (Últimos 10 años)'],
+                    [''],
+                    ['N°', 'Entidad / Empresa', 'Objeto', 'Monto (Bs)', 'Cargo', 'Desde', 'Hasta']
+                ];
+                expFiltrada.sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
+                expFiltrada.forEach((e, i) => {
+                    expData.push([
+                        i + 1,
+                        e.entidad,
+                        e.objeto,
+                        Number(e.monto).toFixed(2),
+                        e.cargo,
+                        fmtDateExcel(e.desde),
+                        fmtDateExcel(e.hasta)
+                    ]);
+                });
+                const ws4 = XLSX.utils.aoa_to_sheet(expData);
+                ws4['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 50 }, { wch: 16 }, { wch: 30 }, { wch: 14 }, { wch: 14 }];
+                XLSX.utils.book_append_sheet(wb, ws4, 'Experiencia');
+
+                // Guardar archivo
+                XLSX.writeFile(wb, `Hoja_Vida_Ing_Antequera_${new Date().toISOString().slice(0,10)}.xlsx`);
+                toast('Hoja de vida exportada a Excel con todas las secciones.');
+            } catch (e) {
+                console.error(e);
+                toast('Error al exportar: ' + e.message);
+            }
         }
 
         /* ============================================================
@@ -1379,26 +1517,6 @@
             overlay.querySelector('#m-cancel').onclick = close;
             overlay.addEventListener('mousedown', e => { if (e.target === overlay) close(); });
             return overlay;
-        }
-
-        /* ============================================================
-           EXPORTAR A EXCEL
-           ============================================================ */
-        function exportExcel() {
-            if (!S.experiencia.length) { toast('No hay datos de experiencia para exportar.'); return; }
-            const data = S.experiencia.map(e => ({
-                'Entidad': e.entidad,
-                'Objeto': e.objeto,
-                'Monto (Bs)': Number(e.monto) || 0,
-                'Cargo': e.cargo,
-                'Desde': e.desde,
-                'Hasta': e.hasta
-            }));
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(data);
-            XLSX.utils.book_append_sheet(wb, ws, 'Experiencia');
-            XLSX.writeFile(wb, `Experiencia_Ing_Antequera_${new Date().toISOString().slice(0,10)}.xlsx`);
-            toast('Excel exportado.');
         }
 
         /* ============================================================
@@ -1650,8 +1768,10 @@
                 render();
                 toast('Proyecto eliminado.');
             });
+            
+            // Botón exportar Excel con hoja de vida completa
             const btnExport = document.getElementById('btn-export-excel');
-            if (btnExport) btnExport.onclick = exportExcel;
+            if (btnExport) btnExport.onclick = exportExcelCompleto;
 
             // Configuración
             const btnConnect = document.getElementById('btn-connect-firebase');
@@ -1696,7 +1816,6 @@
         /* ============================================================
            INICIO
            ============================================================ */
-        // Inicializar Firebase y cargar datos
         initFirebase();
     </script>
 </body>
