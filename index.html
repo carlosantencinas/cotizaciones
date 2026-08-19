@@ -549,35 +549,37 @@
             <p class="sub">Inicia sesión para acceder a tu suite profesional</p>
             <div id="login-error" class="error"></div>
             
-            <div id="login-form">
+            <!-- FORMULARIO DE LOGIN -->
+            <form id="login-form" onsubmit="return false;">
                 <div class="field">
                     <label>Correo electrónico</label>
-                    <input type="email" id="login-email" placeholder="tu@email.com">
+                    <input type="email" id="login-email" placeholder="tu@email.com" required>
                 </div>
                 <div class="field">
                     <label>Contraseña</label>
-                    <input type="password" id="login-password" placeholder="••••••••">
+                    <input type="password" id="login-password" placeholder="••••••••" required>
                 </div>
-                <button class="btn btn-primary" id="btn-login">Iniciar sesión</button>
+                <button type="submit" class="btn btn-primary" id="btn-login">Iniciar sesión</button>
                 <div class="toggle-link">
                     ¿No tienes cuenta? <a id="goto-register">Regístrate aquí</a>
                 </div>
-            </div>
+            </form>
 
-            <div id="register-form" style="display:none;">
+            <!-- FORMULARIO DE REGISTRO -->
+            <form id="register-form" style="display:none;" onsubmit="return false;">
                 <div class="field">
                     <label>Correo electrónico</label>
-                    <input type="email" id="register-email" placeholder="tu@email.com">
+                    <input type="email" id="register-email" placeholder="tu@email.com" required>
                 </div>
                 <div class="field">
                     <label>Contraseña</label>
-                    <input type="password" id="register-password" placeholder="•••••••• (mínimo 6 caracteres)">
+                    <input type="password" id="register-password" placeholder="•••••••• (mínimo 6 caracteres)" required minlength="6">
                 </div>
-                <button class="btn btn-primary" id="btn-register">Crear cuenta</button>
+                <button type="submit" class="btn btn-primary" id="btn-register">Crear cuenta</button>
                 <div class="toggle-link">
                     ¿Ya tienes cuenta? <a id="goto-login">Inicia sesión aquí</a>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -604,45 +606,9 @@
 
     <script>
         /* ============================================================
-           CONFIGURACIÓN - DATOS DEL PROFESIONAL
+           CONFIGURACIÓN
            ============================================================ */
         const LOGO_URL = "https://raw.githubusercontent.com/tu-usuario/tu-repo/main/logo.png";
-        
-        // Datos personales para la hoja de vida
-        const DATOS_PERSONALES = {
-            nombre: 'CARLOS ANDRES ANTEQUERA ENCINAS',
-            ci: '7503322',
-            lugarExpedicion: 'CHUQUISACA',
-            edad: '34',
-            nacionalidad: 'BOLIVIANA',
-            profesion: 'INGENIERO CIVIL',
-            registroProfesional: '28.106'
-        };
-
-        // Formación académica
-        const FORMACION_ACADEMICA = [
-            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2008-02-01', hasta: '2012-12-01', grado: 'LICENCIATURA EN INGENIERIA CIVIL', titulo: '2013-03-15' },
-            { institucion: 'Universidad San Sebastián Chile', desde: '2014-05-01', hasta: '2014-10-01', grado: 'DIPLOMADO: Diseño en Ingeniería Hidráulica', titulo: '2014-10-01' },
-            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2016-07-01', hasta: '2017-12-01', grado: 'ESPECIALIDAD SUPERIOR En Formulación Y Evaluación De Proyectos De Manejo Integral De Cuencas', titulo: '2019-02-04' },
-            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2017-07-01', hasta: '2018-12-01', grado: 'MAESTRÍA: en ingeniería Hidráulica', titulo: '2023-08-21' }
-        ];
-
-        // Cursos de especialización
-        const CURSOS_ESPECIALIZACION = [
-            { institucion: 'Capacitación Profesional Ingeniería Civil Bolivia EMPRESA CONSTRUCTORA FEYOBRA', desde: '2021-02-01', hasta: '2021-02-01', curso: 'Modelación numérica de obras Hidráulicas con el software Iber', horas: 30 },
-            { institucion: 'Ministerio de Medio Ambiente y Agua VRHR UCEP-MiRiego', desde: '2019-11-01', hasta: '2020-04-01', curso: 'Riego tecnificado para técnicos de Acompañantes / Asistencia Técnica / Seguimiento y Evaluación técnica', horas: 120 },
-            { institucion: 'Ministerio de Medio Ambiente y Agua', desde: '2018-10-01', hasta: '2018-10-01', curso: 'Diseño Optimo de redes de riego a turnos Mediante el Software GESTAR', horas: 20 },
-            { institucion: 'Cooperación Suiza, Ministerio de Medio Ambiente y Agua', desde: '2017-02-01', hasta: '2017-07-01', curso: 'Cálculo e interpretación del balance hídrico superficial', horas: 48 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-05-08', hasta: '2014-05-14', curso: 'HIDROLOGIA APLICADA', horas: 22 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-06-09', hasta: '2014-06-13', curso: 'SOCAVACION EN RIOS Y PUENTES', horas: 22 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-07-09', hasta: '2014-07-12', curso: 'OBRAS HIDRAULICAS MENORES', horas: 22 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-08-28', hasta: '2014-10-04', curso: 'PRESAS Y EMBALSES', horas: 22 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-09-29', hasta: '2014-10-06', curso: 'PROYECTOS DE RIEGO', horas: 22 },
-            { institucion: 'SEDERI LA PAZ, Universidad Mayor de San Andrés', desde: '2013-08-01', hasta: '2013-08-01', curso: 'Diseño de Obras Hidráulicas para riego y Agua Potable', horas: 32 },
-            { institucion: 'Sociedad de Ingenieros de Bolivia Departamental Chuquisaca', desde: '2012-04-01', hasta: '2012-04-01', curso: 'Hidrología Aplicada Computarizada para Diseño de Obras Hidráulicas', horas: 32 },
-            { institucion: 'CENTRO DE CAPACITACIÓN "C.E.P.R.A."', desde: '2022-10-01', hasta: '2022-10-01', curso: 'SEWERCAD - APLICADO A REDES DE ALCANTARILLADO SANITARIO Y PLUVIAL', horas: 30 },
-            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2021-09-01', hasta: '2021-09-01', curso: 'Docente del curso de formación: "Uso de EPANET"', horas: 30 }
-        ];
 
         const DEFAULT_CONFIG = {
             nombre: 'M.Sc. Ing. Carlos A. Antequera E.',
@@ -658,9 +624,6 @@
             pagos: [],
             clientes: [],
             experiencia: [],
-            formacion: [...FORMACION_ACADEMICA],
-            cursos: [...CURSOS_ESPECIALIZACION],
-            datosPersonales: { ...DATOS_PERSONALES },
             config: { ...DEFAULT_CONFIG },
             user: null,
             authReady: false
@@ -831,7 +794,7 @@
         }
 
         /* ============================================================
-           SEED DATA
+           SEED DATA (datos de experiencia)
            ============================================================ */
         function seedExperiencia() {
             return [
@@ -1105,10 +1068,10 @@
 
             return `
             <div class="page-head">
-                <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados (últimos 10 años), con diagrama de Gantt y exportación a Excel con hoja de vida completa.</p></div>
+                <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados (últimos 10 años), con diagrama de Gantt y exportación a Excel.</p></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-primary" id="btn-new-exp">${ICONS.plus} Agregar proyecto</button>
-                    <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar hoja de vida a Excel</button>
+                    <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar a Excel</button>
                 </div>
             </div>
 
@@ -1217,101 +1180,23 @@
         }
 
         /* ============================================================
-           EXPORTAR A EXCEL - HOJA DE VIDA COMPLETA
+           EXPORTAR A EXCEL
            ============================================================ */
-        function exportExcelCompleto() {
-            try {
-                const wb = XLSX.utils.book_new();
-                
-                // ----- HOJA 1: DATOS PERSONALES -----
-                const datosPersonalesData = [
-                    ['HOJA DE VIDA ESPECIALISTA HIDRÓLOGO'],
-                    [''],
-                    ['1. DATOS GENERALES'],
-                    [''],
-                    ['Nombre Completo', S.datosPersonales.nombre],
-                    ['Cédula de Identidad', S.datosPersonales.ci],
-                    ['Lugar de Expedición', S.datosPersonales.lugarExpedicion],
-                    ['Edad', S.datosPersonales.edad],
-                    ['Nacionalidad', S.datosPersonales.nacionalidad],
-                    ['Profesión', S.datosPersonales.profesion],
-                    ['Número de Registro Profesional', S.datosPersonales.registroProfesional]
-                ];
-                const ws1 = XLSX.utils.aoa_to_sheet(datosPersonalesData);
-                ws1['!cols'] = [{ wch: 30 }, { wch: 40 }];
-                XLSX.utils.book_append_sheet(wb, ws1, 'Datos Generales');
-
-                // ----- HOJA 2: FORMACIÓN ACADÉMICA -----
-                const formacionData = [
-                    ['2. FORMACIÓN ACADÉMICA'],
-                    [''],
-                    ['Universidad / Institución', 'Desde', 'Hasta', 'Grado Académico', 'Título en Provisión Nacional']
-                ];
-                S.formacion.forEach(f => {
-                    formacionData.push([
-                        f.institucion,
-                        fmtDateExcel(f.desde),
-                        fmtDateExcel(f.hasta),
-                        f.grado,
-                        fmtDateExcel(f.titulo)
-                    ]);
-                });
-                const ws2 = XLSX.utils.aoa_to_sheet(formacionData);
-                ws2['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }, { wch: 50 }, { wch: 20 }];
-                XLSX.utils.book_append_sheet(wb, ws2, 'Formación Académica');
-
-                // ----- HOJA 3: CURSOS DE ESPECIALIZACIÓN -----
-                const cursosData = [
-                    ['3. CURSOS DE ESPECIALIZACIÓN'],
-                    [''],
-                    ['Universidad / Institución', 'Desde', 'Hasta', 'Nombre del Curso', 'Duración en Horas']
-                ];
-                S.cursos.forEach(c => {
-                    cursosData.push([
-                        c.institucion,
-                        fmtDateExcel(c.desde),
-                        fmtDateExcel(c.hasta),
-                        c.curso,
-                        c.horas
-                    ]);
-                });
-                const ws3 = XLSX.utils.aoa_to_sheet(cursosData);
-                ws3['!cols'] = [{ wch: 45 }, { wch: 15 }, { wch: 15 }, { wch: 50 }, { wch: 18 }];
-                XLSX.utils.book_append_sheet(wb, ws3, 'Cursos Especialización');
-
-                // ----- HOJA 4: EXPERIENCIA (últimos 10 años) -----
-                const now = new Date();
-                const tenYearsAgo = new Date(now);
-                tenYearsAgo.setFullYear(now.getFullYear() - 10);
-                const expFiltrada = S.experiencia.filter(e => new Date(e.desde + 'T00:00:00') >= tenYearsAgo);
-                const expData = [
-                    ['4. EXPERIENCIA GENERAL (Últimos 10 años)'],
-                    [''],
-                    ['N°', 'Entidad / Empresa', 'Objeto', 'Monto (Bs)', 'Cargo', 'Desde', 'Hasta']
-                ];
-                expFiltrada.sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
-                expFiltrada.forEach((e, i) => {
-                    expData.push([
-                        i + 1,
-                        e.entidad,
-                        e.objeto,
-                        Number(e.monto).toFixed(2),
-                        e.cargo,
-                        fmtDateExcel(e.desde),
-                        fmtDateExcel(e.hasta)
-                    ]);
-                });
-                const ws4 = XLSX.utils.aoa_to_sheet(expData);
-                ws4['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 50 }, { wch: 16 }, { wch: 30 }, { wch: 14 }, { wch: 14 }];
-                XLSX.utils.book_append_sheet(wb, ws4, 'Experiencia');
-
-                // Guardar archivo
-                XLSX.writeFile(wb, `Hoja_Vida_Ing_Antequera_${new Date().toISOString().slice(0,10)}.xlsx`);
-                toast('Hoja de vida exportada a Excel con todas las secciones.');
-            } catch (e) {
-                console.error(e);
-                toast('Error al exportar: ' + e.message);
-            }
+        function exportExcel() {
+            if (!S.experiencia.length) { toast('No hay datos de experiencia para exportar.'); return; }
+            const data = S.experiencia.map(e => ({
+                'Entidad': e.entidad,
+                'Objeto': e.objeto,
+                'Monto (Bs)': Number(e.monto) || 0,
+                'Cargo': e.cargo,
+                'Desde': e.desde,
+                'Hasta': e.hasta
+            }));
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, 'Experiencia');
+            XLSX.writeFile(wb, `Experiencia_Ing_Antequera_${new Date().toISOString().slice(0,10)}.xlsx`);
+            toast('Excel exportado.');
         }
 
         /* ============================================================
@@ -1650,20 +1535,24 @@
         function bindViewEvents() {
             const main = document.getElementById('main');
 
-            // LOGIN / REGISTER
-            document.getElementById('btn-login').onclick = async () => {
+            // LOGIN / REGISTER - Usando eventos submit de los formularios
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
                 const email = document.getElementById('login-email').value.trim();
                 const password = document.getElementById('login-password').value;
                 if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
                 await login(email, password);
-            };
-            document.getElementById('btn-register').onclick = async () => {
+            });
+
+            document.getElementById('register-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
                 const email = document.getElementById('register-email').value.trim();
                 const password = document.getElementById('register-password').value;
                 if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
                 if (password.length < 6) { showLoginError('La contraseña debe tener al menos 6 caracteres.'); return; }
                 await register(email, password);
-            };
+            });
+
             document.getElementById('goto-register').onclick = () => {
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('register-form').style.display = 'block';
@@ -1675,10 +1564,6 @@
                 hideLoginError();
             };
             document.getElementById('btn-logout').onclick = logout;
-
-            // Enter key para login/register
-            document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-login').click(); });
-            document.getElementById('register-password').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-register').click(); });
 
             // Cotizaciones
             const btnNew = document.getElementById('btn-new-cot');
@@ -1768,10 +1653,8 @@
                 render();
                 toast('Proyecto eliminado.');
             });
-            
-            // Botón exportar Excel con hoja de vida completa
             const btnExport = document.getElementById('btn-export-excel');
-            if (btnExport) btnExport.onclick = exportExcelCompleto;
+            if (btnExport) btnExport.onclick = exportExcel;
 
             // Configuración
             const btnConnect = document.getElementById('btn-connect-firebase');
