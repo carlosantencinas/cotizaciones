@@ -650,30 +650,6 @@
         .gantt-legend .dot.educacion { background: #8E44AD; }
         .gantt-legend .dot.curso { background: #E67E22; }
 
-        .word-export-options {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--gantt-bg);
-            border-radius: var(--radius);
-            margin-top: 12px;
-        }
-        .word-export-options label {
-            font-size: 12px;
-            color: var(--text-soft);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .word-export-options input[type="checkbox"] {
-            accent-color: var(--primary);
-            cursor: pointer;
-            width: 16px;
-            height: 16px;
-        }
-
         @media (max-width: 768px) {
             #sidebar { width: 64px; padding: 16px 8px; }
             .brand-txt { display: none; }
@@ -871,13 +847,13 @@
         }
 
         // ============================================================
-        // STATE - Ampliado con experiencia, formacion, cursos, datosPersonales
+        // STATE - Usa el mismo prefijo que index.html (hidro_data_)
         // ============================================================
         const S = {
             view: 'dashboard',
             licitaciones: [],
             contactos: [],
-            // Datos desde index.html
+            // Datos desde index.html - MISMA ESTRUCTURA
             experiencia: [],
             formacion: [],
             cursos: [],
@@ -903,9 +879,7 @@
             licFilters: { convocatoria: '', proyecto: '', estado: '', entidad: '' },
             licSort: { column: null, direction: 'asc' },
             contFilters: { nombre: '', empresa: '', cargo: '' },
-            contSort: { column: null, direction: 'asc' },
-            // Word export options
-            wordOptions: { incluirExperiencia: true, incluirFormacion: true, incluirCursos: true }
+            contSort: { column: null, direction: 'asc' }
         };
 
         // ============================================================
@@ -925,9 +899,9 @@
         };
 
         // ============================================================
-        // FIREBASE
+        // FIREBASE - MISMO PREFIJO QUE INDEX.HTML
         // ============================================================
-        const LS_PREFIX = 'licitaciones_';
+        const LS_PREFIX = 'hidro_data_';  // <-- MISMO PREFIJO QUE INDEX.HTML
         let fbApp = null;
         let fbAuth = null;
         let fbDb = null;
@@ -1043,7 +1017,7 @@
         }
 
         // ============================================================
-        // CRUD
+        // CRUD - MISMO QUE INDEX.HTML
         // ============================================================
         async function cloudGet(userId, key) {
             if (!cloudReady || !fbDb) return localStorage.getItem(LS_PREFIX + userId + '_' + key);
@@ -1070,7 +1044,7 @@
         }
 
         async function loadData(userId) {
-            // Cargar datos propios
+            // Cargar datos propios de licitaciones
             try {
                 const l = await cloudGet(userId, 'licitaciones');
                 S.licitaciones = l ? JSON.parse(l) : null;
@@ -1080,7 +1054,7 @@
                 S.contactos = c ? JSON.parse(c) : null;
             } catch (e) { S.contactos = null; }
 
-            // Cargar datos desde index.html (misma estructura en Firebase)
+            // Cargar datos desde index.html (misma estructura y prefijo)
             try {
                 const e = await cloudGet(userId, 'experiencia');
                 S.experiencia = e ? JSON.parse(e) : null;
@@ -1121,6 +1095,7 @@
                     { contratante: 'FONDO PRODUCTIVO Y SOCIAL FPS CHUQUISACA', supervisor: 'FELICIDAD ALMENDRAS C.', cargo: 'FISCAL DE PROYECTOS', telefono: '77135608' },
                     { contratante: 'ROES CONSULTORES', supervisor: 'RODRIGO UZQUEDA SEGOVIA', cargo: 'REPRESENTANTE LEGAL', telefono: '72972874' }
                 ];
+                await saveReferencias(userId);
             }
 
             // Logo
@@ -1130,6 +1105,7 @@
 
         async function saveLicitaciones(userId) { await cloudSet(userId || S.user?.uid, 'licitaciones', JSON.stringify(S.licitaciones)); }
         async function saveContactos(userId) { await cloudSet(userId || S.user?.uid, 'contactos', JSON.stringify(S.contactos)); }
+        async function saveReferencias(userId) { await cloudSet(userId || S.user?.uid, 'referencias', JSON.stringify(S.referencias)); }
 
         function toast(msg) {
             const t = document.getElementById('toast');
@@ -1316,9 +1292,9 @@
                     <tr><th>Nivel</th><th>Institución</th><th>Título/Diploma</th><th>Año</th></tr>
                     ${formacion.length ? formacion.map(f => `
                         <tr>
-                            <td>${esc(f.nivel || '')}</td>
+                            <td>${esc(f.grado || '')}</td>
                             <td>${esc(f.institucion || '')}</td>
-                            <td>${esc(f.titulo || '')}</td>
+                            <td>${esc(f.titulo || f.grado || '')}</td>
                             <td style="text-align:center;">${esc(f.anio || '')}</td>
                         </tr>
                     `).join('') : '<tr><td colspan="4" style="text-align:center;">No registra formación académica</td></tr>'}
@@ -1329,7 +1305,7 @@
                     <tr><th>Nombre del Curso</th><th>Institución</th><th>Horas</th><th>Año</th></tr>
                     ${cursos.length ? cursos.map(c => `
                         <tr>
-                            <td>${esc(c.nombre || '')}</td>
+                            <td>${esc(c.curso || '')}</td>
                             <td>${esc(c.institucion || '')}</td>
                             <td style="text-align:center;">${esc(c.horas || '')}</td>
                             <td style="text-align:center;">${esc(c.anio || '')}</td>
@@ -1362,23 +1338,30 @@
                 <h3>I. EXPERIENCIA LABORAL</h3>
                 <table>
                     <tr><th style="width:40%;">Empresa / Institución</th><th style="width:30%;">Cargo</th><th style="width:15%;">Desde</th><th style="width:15%;">Hasta</th></tr>
-                    ${experiencia.length ? experiencia.map(e => `
-                        <tr>
-                            <td>${esc(e.empresa || '')}</td>
-                            <td>${esc(e.cargo || '')}</td>
-                            <td style="text-align:center;">${fmtDateWord(e.fechaInicio)}</td>
-                            <td style="text-align:center;">${fmtDateWord(e.fechaFin)}</td>
-                        </tr>
-                    `).join('') : '<tr><td colspan="4" style="text-align:center;">No registra experiencia laboral</td></tr>'}
+                    ${experiencia.length ? experiencia.map(e => {
+                        // Usar los campos correctos según la estructura de index.html
+                        const entidad = e.entidad || e.empresa || '';
+                        const cargo = e.cargo || '';
+                        const desde = e.desde || e.fechaInicio || '';
+                        const hasta = e.hasta || e.fechaFin || '';
+                        return `
+                            <tr>
+                                <td>${esc(entidad)}</td>
+                                <td>${esc(cargo)}</td>
+                                <td style="text-align:center;">${fmtDateWord(desde)}</td>
+                                <td style="text-align:center;">${e.enCurso ? 'En curso' : fmtDateWord(hasta)}</td>
+                            </tr>
+                        `;
+                    }).join('') : '<tr><td colspan="4" style="text-align:center;">No registra experiencia laboral</td></tr>'}
                 </table>
                 
                 <h3>II. PROYECTOS DESTACADOS</h3>
                 <table>
                     <tr><th>Proyecto</th><th>Institución</th><th>Cargo</th><th>Año</th></tr>
-                    ${experiencia.filter(e => e.proyecto).map(e => `
+                    ${experiencia.filter(e => e.objeto).map(e => `
                         <tr>
-                            <td>${esc(e.proyecto || '')}</td>
-                            <td>${esc(e.empresa || '')}</td>
+                            <td>${esc(e.objeto || '')}</td>
+                            <td>${esc(e.entidad || '')}</td>
                             <td>${esc(e.cargo || '')}</td>
                             <td style="text-align:center;">${esc(e.anio || '')}</td>
                         </tr>
@@ -1457,7 +1440,6 @@
             const htmlContent = generarHTMLWord(tipo);
             const filename = `Ing_Antequera_${tipo.toUpperCase()}_${new Date().toISOString().slice(0,10)}.doc`;
             
-            // Crear blob y descargar
             const blob = new Blob([htmlContent], { type: 'application/msword;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -1578,11 +1560,13 @@
             const dp = S.datosPersonales || {};
             const edad = calcularEdad(dp.fechaNacimiento);
 
-            // Calcular años de experiencia total - con manejo seguro
+            // Calcular años de experiencia total
             let totalYears = 0;
             exp.forEach(e => {
-                if (e.fechaInicio && e.fechaFin) {
-                    const years = diffYears(e.fechaInicio, e.fechaFin);
+                const desde = e.desde || e.fechaInicio;
+                const hasta = e.hasta || e.fechaFin;
+                if (desde && hasta) {
+                    const years = diffYears(desde, hasta);
                     if (years > 0) totalYears += years;
                 }
             });
@@ -1617,9 +1601,9 @@
                     ${formacion.length ? `
                         <div class="table-wrap">
                             <table>
-                                <thead><tr><th>Nivel</th><th>Institución</th><th>Título</th><th>Año</th></tr></thead>
+                                <thead><tr><th>Institución</th><th>Grado</th><th>Desde</th><th>Hasta</th></tr></thead>
                                 <tbody>${formacion.map(f => `
-                                    <tr><td>${esc(f.nivel || '')}</td><td>${esc(f.institucion || '')}</td><td>${esc(f.titulo || '')}</td><td class="tnum">${esc(f.anio || '')}</td></tr>
+                                    <tr><td>${esc(f.institucion || '')}</td><td>${esc(f.grado || '')}</td><td class="tnum">${fmtDate(f.desde)}</td><td class="tnum">${fmtDate(f.hasta)}</td></tr>
                                 `).join('')}</tbody>
                             </table>
                         </div>
@@ -1633,9 +1617,9 @@
                     ${cursos.length ? `
                         <div class="table-wrap">
                             <table>
-                                <thead><tr><th>Nombre</th><th>Institución</th><th>Horas</th><th>Año</th></tr></thead>
+                                <thead><tr><th>Curso</th><th>Institución</th><th>Horas</th><th>Año</th></tr></thead>
                                 <tbody>${cursos.map(c => `
-                                    <tr><td>${esc(c.nombre || '')}</td><td>${esc(c.institucion || '')}</td><td class="tnum">${esc(c.horas || '')}</td><td class="tnum">${esc(c.anio || '')}</td></tr>
+                                    <tr><td>${esc(c.curso || '')}</td><td>${esc(c.institucion || '')}</td><td class="tnum">${esc(c.horas || '')}</td><td class="tnum">${esc(c.anio || '')}</td></tr>
                                 `).join('')}</tbody>
                             </table>
                         </div>
@@ -1650,12 +1634,14 @@
                         <div style="margin-bottom:12px;font-size:13px;color:var(--text-soft);">Total de años de experiencia: <strong>${totalYears}</strong> años</div>
                         <div class="gantt-container">
                             ${exp.map(e => {
+                                const desde = e.desde || e.fechaInicio;
+                                const hasta = e.hasta || e.fechaFin;
                                 let years = 0;
-                                if (e.fechaInicio && e.fechaFin) {
-                                    years = diffYears(e.fechaInicio, e.fechaFin);
+                                if (desde && hasta) {
+                                    years = diffYears(desde, hasta);
                                 }
-                                const label = e.cargo || e.empresa || 'Experiencia';
-                                const sub = e.empresa ? e.empresa : '';
+                                const label = e.objeto || e.cargo || 'Experiencia';
+                                const sub = e.entidad || '';
                                 const width = Math.min(100, Math.max(5, years * 10));
                                 return `
                                     <div class="gantt-row">
@@ -1668,7 +1654,7 @@
                                                 ${years > 0 ? years + ' años' : ''}
                                             </div>
                                         </div>
-                                        <div class="gantt-duration">${fmtDateShort(e.fechaInicio)} - ${fmtDateShort(e.fechaFin)}</div>
+                                        <div class="gantt-duration">${fmtDateShort(desde)} - ${e.enCurso ? 'En curso' : fmtDateShort(hasta)}</div>
                                     </div>
                                 `;
                             }).join('')}
