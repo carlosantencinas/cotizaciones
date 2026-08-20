@@ -10,8 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -804,6 +802,17 @@
             }
         }
 
+        function fmtDateWordShort(s) {
+            if (!s) return '';
+            try {
+                const d = new Date(s + 'T00:00:00');
+                if (isNaN(d)) return s;
+                return d.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
+            } catch (e) {
+                return '';
+            }
+        }
+
         function esc(s) {
             return String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
         }
@@ -901,7 +910,7 @@
         // ============================================================
         // FIREBASE - MISMO PREFIJO QUE INDEX.HTML
         // ============================================================
-        const LS_PREFIX = 'hidro_data_';  // <-- MISMO PREFIJO QUE INDEX.HTML
+        const LS_PREFIX = 'hidro_data_';
         let fbApp = null;
         let fbAuth = null;
         let fbDb = null;
@@ -1054,7 +1063,7 @@
                 S.contactos = c ? JSON.parse(c) : null;
             } catch (e) { S.contactos = null; }
 
-            // Cargar datos desde index.html (misma estructura y prefijo)
+            // Cargar datos desde index.html
             try {
                 const e = await cloudGet(userId, 'experiencia');
                 S.experiencia = e ? JSON.parse(e) : null;
@@ -1080,7 +1089,7 @@
                 if (refs) S.referencias = JSON.parse(refs);
             } catch (e) { S.referencias = []; }
 
-            // Inicializar arrays vacíos si no existen
+            // Inicializar arrays vacíos
             if (S.licitaciones === null) { S.licitaciones = []; await saveLicitaciones(userId); }
             if (S.contactos === null) { S.contactos = []; await saveContactos(userId); }
             if (S.experiencia === null) { S.experiencia = []; }
@@ -1222,7 +1231,7 @@
         }
 
         // ============================================================
-        // EXPORTAR A WORD - A-5, A-7 y Participación
+        // EXPORTAR A WORD - A-5, A-7 y Participación (FORMATOS OFICIALES)
         // ============================================================
         function generarHTMLWord(tipo) {
             const dp = S.datosPersonales || {};
@@ -1232,19 +1241,31 @@
             const cursos = S.cursos || [];
             const referencias = S.referencias || [];
             const edad = calcularEdad(dp.fechaNacimiento);
+            const lic = S.licitaciones || [];
+
+            // Calcular años desde obtención del título
+            let añosDesdeTitulo = '';
+            if (dp.fechaNacimiento) {
+                const nac = new Date(dp.fechaNacimiento + 'T00:00:00');
+                if (!isNaN(nac)) {
+                    const hoy = new Date();
+                    let edadCalc = hoy.getFullYear() - nac.getFullYear();
+                    añosDesdeTitulo = edadCalc + ' años';
+                }
+            }
 
             // Títulos según tipo
             let titulo = '';
             let subtitulo = '';
             if (tipo === 'a5') {
                 titulo = 'FORMULARIO A-5';
-                subtitulo = 'CURRÍCULUM VITAE - DATOS PERSONALES Y FORMACIÓN';
+                subtitulo = 'HOJA DE VIDA DEL ESPECIALISTA';
             } else if (tipo === 'a7') {
                 titulo = 'FORMULARIO A-7';
-                subtitulo = 'EXPERIENCIA LABORAL Y REFERENCIAS';
+                subtitulo = 'EXPERIENCIA LABORAL DEL ESPECIALISTA';
             } else if (tipo === 'participacion') {
-                titulo = 'DECLARACIÓN DE PARTICIPACIÓN';
-                subtitulo = 'Declaración de participación en licitaciones';
+                titulo = 'FORMULARIO DE PARTICIPACIÓN';
+                subtitulo = '';
             }
 
             // Construir HTML
@@ -1253,176 +1274,266 @@
             <head>
                 <meta charset="UTF-8">
                 <style>
-                    body { font-family: 'Times New Roman', Times, serif; margin: 40px; font-size: 11pt; line-height: 1.5; }
-                    h1 { text-align: center; font-size: 16pt; text-transform: uppercase; margin-bottom: 4px; }
-                    h2 { text-align: center; font-size: 13pt; font-weight: normal; margin-top: 0; margin-bottom: 20px; }
-                    h3 { font-size: 12pt; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px; }
-                    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-                    th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; vertical-align: top; }
-                    th { background: #f0f0f0; font-weight: bold; text-align: center; }
-                    .label-cell { font-weight: bold; width: 25%; }
-                    .firma { margin-top: 30px; text-align: center; }
-                    .firma .linea { width: 200px; border-top: 1px solid #000; margin: 30px auto 6px; }
-                    .firma .cargo { font-size: 10pt; }
-                    .nota { font-size: 9pt; color: #555; margin-top: 10px; }
+                    body { font-family: 'Times New Roman', Times, serif; margin: 30px; font-size: 10pt; line-height: 1.4; }
+                    h1 { text-align: center; font-size: 14pt; text-transform: uppercase; margin-bottom: 2px; }
+                    h2 { text-align: center; font-size: 11pt; font-weight: normal; margin-top: 0; margin-bottom: 16px; }
+                    h3 { font-size: 11pt; margin-top: 14px; margin-bottom: 6px; border-bottom: 1px solid #000; padding-bottom: 3px; font-weight: bold; }
+                    table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9pt; }
+                    th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; vertical-align: middle; }
+                    th { background: #e8e8e8; font-weight: bold; text-align: center; }
+                    .label-cell { font-weight: bold; width: 30%; }
+                    .firma { margin-top: 25px; text-align: center; }
+                    .firma .linea { width: 200px; border-top: 1px solid #000; margin: 25px auto 6px; }
+                    .firma .cargo { font-size: 9pt; }
+                    .nota { font-size: 8pt; color: #555; margin-top: 10px; }
+                    .header-info { margin-bottom: 12px; }
+                    .header-info table { border: none; }
+                    .header-info td { border: none; padding: 2px 4px; }
+                    .fecha-firma { text-align: right; font-size: 9pt; margin-top: 15px; }
+                    .declaracion { margin: 12px 0; padding: 8px 10px; border: 1px solid #ccc; font-size: 9pt; }
+                    .declaracion p { margin: 4px 0; }
+                    .small-text { font-size: 8pt; }
                 </style>
             </head>
             <body>
             `;
 
-            // A-5: Datos personales y formación
+            // === FORMULARIO A-5 ===
             if (tipo === 'a5') {
+                // Extraer primer título de formación
+                const primerTitulo = formacion.length > 0 ? formacion[0] : null;
+                const tituloGrado = primerTitulo ? (primerTitulo.grado || '') : '';
+                const tituloInstitucion = primerTitulo ? (primerTitulo.institucion || '') : '';
+                const tituloDesde = primerTitulo ? fmtDateWordShort(primerTitulo.desde) : '';
+                const tituloHasta = primerTitulo ? fmtDateWordShort(primerTitulo.hasta) : '';
+
                 html += `
                 <h1>${titulo}</h1>
                 <h2>${subtitulo}</h2>
-                
-                <h3>I. DATOS PERSONALES</h3>
+
+                <h3>1. DATOS GENERALES</h3>
                 <table>
-                    <tr><td class="label-cell">Nombres y Apellidos</td><td>${esc(dp.nombre || config.nombre || '')}</td></tr>
-                    <tr><td class="label-cell">Cédula de Identidad</td><td>${esc(dp.ci || '')}</td></tr>
-                    <tr><td class="label-cell">Lugar de Expedición</td><td>${esc(dp.lugarExpedicion || '')}</td></tr>
-                    <tr><td class="label-cell">Fecha de Nacimiento</td><td>${fmtDateWord(dp.fechaNacimiento)} ${edad ? '(Edad: ' + edad + ' años)' : ''}</td></tr>
+                    <tr><td class="label-cell">Nombre Completo</td><td>${esc(dp.nombre || config.nombre || '')}</td></tr>
+                    <tr><td class="label-cell">Cédula de Identidad</td><td>${esc(dp.ci || '')} - ${esc(dp.lugarExpedicion || '')}</td></tr>
+                    <tr><td class="label-cell">Edad</td><td>${edad || ''} años</td></tr>
                     <tr><td class="label-cell">Nacionalidad</td><td>${esc(dp.nacionalidad || '')}</td></tr>
                     <tr><td class="label-cell">Profesión</td><td>${esc(dp.profesion || '')}</td></tr>
-                    <tr><td class="label-cell">Registro Profesional</td><td>${esc(dp.registroProfesional || '')}</td></tr>
+                    <tr><td class="label-cell">Número de Registro Profesional</td><td>${esc(dp.registroProfesional || config.rni || '')}</td></tr>
                 </table>
-                
-                <h3>II. FORMACIÓN ACADÉMICA</h3>
+
+                <h3>2. FORMACIÓN ACADÉMICA</h3>
                 <table>
-                    <tr><th>Nivel</th><th>Institución</th><th>Título/Diploma</th><th>Año</th></tr>
+                    <tr><th>Universidad / Institución</th><th>Fechas</th><th>Grado Académico</th><th>Título en Provisión Nacional</th></tr>
                     ${formacion.length ? formacion.map(f => `
                         <tr>
-                            <td>${esc(f.grado || '')}</td>
                             <td>${esc(f.institucion || '')}</td>
-                            <td>${esc(f.titulo || f.grado || '')}</td>
-                            <td style="text-align:center;">${esc(f.anio || '')}</td>
+                            <td style="text-align:center;">${fmtDateWordShort(f.desde)} - ${fmtDateWordShort(f.hasta)}</td>
+                            <td>${esc(f.grado || '')}</td>
+                            <td style="text-align:center;">${esc(f.titulo || f.grado || '')}</td>
                         </tr>
                     `).join('') : '<tr><td colspan="4" style="text-align:center;">No registra formación académica</td></tr>'}
                 </table>
-                
-                <h3>III. CURSOS Y SEMINARIOS</h3>
+
+                <h3>3. CURSOS DE ESPECIALIZACIÓN</h3>
                 <table>
-                    <tr><th>Nombre del Curso</th><th>Institución</th><th>Horas</th><th>Año</th></tr>
+                    <tr><th>Universidad / Institución</th><th>Fechas</th><th>Nombre del Curso</th><th>Duración en Horas</th></tr>
                     ${cursos.length ? cursos.map(c => `
                         <tr>
-                            <td>${esc(c.curso || '')}</td>
                             <td>${esc(c.institucion || '')}</td>
+                            <td style="text-align:center;">${fmtDateWordShort(c.desde)} - ${fmtDateWordShort(c.hasta)}</td>
+                            <td>${esc(c.curso || '')}</td>
                             <td style="text-align:center;">${esc(c.horas || '')}</td>
-                            <td style="text-align:center;">${esc(c.anio || '')}</td>
                         </tr>
-                    `).join('') : '<tr><td colspan="4" style="text-align:center;">No registra cursos</td></tr>'}
+                    `).join('') : '<tr><td colspan="4" style="text-align:center;">No registra cursos de especialización</td></tr>'}
                 </table>
-                
-                <h3>IV. IDIOMAS</h3>
-                <table>
-                    <tr><th>Idioma</th><th>Nivel</th></tr>
-                    <tr><td>Español</td><td>Nativo</td></tr>
-                    <tr><td>Inglés</td><td>Técnico</td></tr>
-                </table>
-                
+
                 <div class="firma">
                     <div class="linea"></div>
                     <div><strong>${esc(dp.nombre || config.nombre || '')}</strong></div>
                     <div class="cargo">${esc(dp.profesion || '')}</div>
-                    <div class="cargo">${esc(config.rni || '')}</div>
+                    <div class="cargo">${esc(dp.registroProfesional || config.rni || '')}</div>
                 </div>
                 `;
             }
 
-            // A-7: Experiencia laboral
-            if (tipo === 'a7') {
+            // === FORMULARIO A-7 ===
+            else if (tipo === 'a7') {
                 html += `
                 <h1>${titulo}</h1>
                 <h2>${subtitulo}</h2>
-                
-                <h3>I. EXPERIENCIA LABORAL</h3>
+
+                <h3>1. DATOS GENERALES</h3>
                 <table>
-                    <tr><th style="width:40%;">Empresa / Institución</th><th style="width:30%;">Cargo</th><th style="width:15%;">Desde</th><th style="width:15%;">Hasta</th></tr>
-                    ${experiencia.length ? experiencia.map(e => {
-                        // Usar los campos correctos según la estructura de index.html
-                        const entidad = e.entidad || e.empresa || '';
-                        const cargo = e.cargo || '';
-                        const desde = e.desde || e.fechaInicio || '';
-                        const hasta = e.hasta || e.fechaFin || '';
-                        return `
-                            <tr>
-                                <td>${esc(entidad)}</td>
-                                <td>${esc(cargo)}</td>
-                                <td style="text-align:center;">${fmtDateWord(desde)}</td>
-                                <td style="text-align:center;">${e.enCurso ? 'En curso' : fmtDateWord(hasta)}</td>
-                            </tr>
-                        `;
-                    }).join('') : '<tr><td colspan="4" style="text-align:center;">No registra experiencia laboral</td></tr>'}
+                    <tr><td class="label-cell">Nombre Completo</td><td>${esc(dp.nombre || config.nombre || '')}</td></tr>
+                    <tr><td class="label-cell">Cédula de Identidad</td><td>${esc(dp.ci || '')} - ${esc(dp.lugarExpedicion || '')}</td></tr>
+                    <tr><td class="label-cell">Edad</td><td>${edad || ''} años</td></tr>
+                    <tr><td class="label-cell">Nacionalidad</td><td>${esc(dp.nacionalidad || '')}</td></tr>
+                    <tr><td class="label-cell">Profesión</td><td>${esc(dp.profesion || '')}</td></tr>
+                    <tr><td class="label-cell">Número de Registro Profesional</td><td>${esc(dp.registroProfesional || config.rni || '')}</td></tr>
                 </table>
-                
-                <h3>II. PROYECTOS DESTACADOS</h3>
+
+                <h3>2. EXPERIENCIA EN CONSULTORÍAS EN GENERAL</h3>
                 <table>
-                    <tr><th>Proyecto</th><th>Institución</th><th>Cargo</th><th>Año</th></tr>
-                    ${experiencia.filter(e => e.objeto).map(e => `
+                    <tr><th style="width:5%;">N°</th><th style="width:20%;">Entidad / Empresa</th><th style="width:30%;">Objeto de la Consultoría</th><th style="width:15%;">Monto (Bs.)</th><th style="width:15%;">Cargo</th><th style="width:15%;">Fecha (día/mes/año)</th></tr>
+                    ${experiencia.length ? experiencia.map((e, i) => `
                         <tr>
-                            <td>${esc(e.objeto || '')}</td>
+                            <td style="text-align:center;">${i + 1}</td>
                             <td>${esc(e.entidad || '')}</td>
+                            <td>${esc(e.objeto || '')}</td>
+                            <td style="text-align:right;">${Number(e.monto || 0).toFixed(2)}</td>
                             <td>${esc(e.cargo || '')}</td>
-                            <td style="text-align:center;">${esc(e.anio || '')}</td>
+                            <td style="text-align:center;">${fmtDateWordShort(e.desde)} - ${fmtDateWordShort(e.hasta)}</td>
                         </tr>
-                    `).join('') || '<tr><td colspan="4" style="text-align:center;">No registra proyectos destacados</td></tr>'}
+                    `).join('') : '<tr><td colspan="6" style="text-align:center;">No registra experiencia en consultorías</td></tr>'}
                 </table>
-                
-                <h3>III. REFERENCIAS LABORALES</h3>
+
+                <h3>3. EXPERIENCIA EN EL CARGO EN CONSULTORÍAS ESPECÍFICAS</h3>
                 <table>
-                    <tr><th>Contratante</th><th>Supervisor</th><th>Cargo</th><th>Teléfono</th></tr>
+                    <tr><th style="width:5%;">N°</th><th style="width:20%;">Entidad / Empresa</th><th style="width:30%;">Objeto de la Consultoría</th><th style="width:15%;">Monto (Bs.)</th><th style="width:15%;">Cargo</th><th style="width:15%;">Fecha (día/mes/año)</th></tr>
+                    ${experiencia.length ? experiencia.slice(0, 15).map((e, i) => `
+                        <tr>
+                            <td style="text-align:center;">${i + 1}</td>
+                            <td>${esc(e.entidad || '')}</td>
+                            <td>${esc(e.objeto || '')}</td>
+                            <td style="text-align:right;">${Number(e.monto || 0).toFixed(2)}</td>
+                            <td>${esc(e.cargo || '')}</td>
+                            <td style="text-align:center;">${fmtDateWordShort(e.desde)} - ${fmtDateWordShort(e.hasta)}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="6" style="text-align:center;">No registra experiencia en el cargo</td></tr>'}
+                </table>
+
+                <h3>4. REFERENCIAS LABORALES</h3>
+                <table>
+                    <tr><th>Contratante</th><th>Nombre del Supervisor</th><th>Cargo</th><th>Correo Electrónico</th><th>Teléfono</th></tr>
                     ${referencias.length ? referencias.map(r => `
                         <tr>
                             <td>${esc(r.contratante || '')}</td>
                             <td>${esc(r.supervisor || '')}</td>
                             <td>${esc(r.cargo || '')}</td>
+                            <td>${esc(r.email || '--')}</td>
                             <td>${esc(r.telefono || '')}</td>
                         </tr>
-                    `).join('') : '<tr><td colspan="4" style="text-align:center;">No registra referencias</td></tr>'}
+                    `).join('') : '<tr><td colspan="5" style="text-align:center;">No registra referencias laborales</td></tr>'}
                 </table>
-                
+
                 <div class="firma">
                     <div class="linea"></div>
                     <div><strong>${esc(dp.nombre || config.nombre || '')}</strong></div>
                     <div class="cargo">${esc(dp.profesion || '')}</div>
-                    <div class="cargo">${esc(config.rni || '')}</div>
+                    <div class="cargo">${esc(dp.registroProfesional || config.rni || '')}</div>
                 </div>
                 `;
             }
 
-            // Participación
-            if (tipo === 'participacion') {
-                const lic = S.licitaciones || [];
+            // === FORMULARIO DE PARTICIPACIÓN ===
+            else if (tipo === 'participacion') {
                 const participadas = lic.filter(l => l.estado === 'presentada' || l.estado === 'evaluacion' || l.estado === 'adjudicada' || l.estado === 'en-curso');
-                
+                const montoTotalParticipacion = participadas.reduce((s, l) => s + (Number(l.monto) || 0), 0);
+
                 html += `
                 <h1>${titulo}</h1>
-                <h2>${subtitulo}</h2>
-                
-                <p style="margin-bottom:16px;">Por medio de la presente, <strong>${esc(dp.nombre || config.nombre || '')}</strong>, con C.I. ${esc(dp.ci || '')}, declaro mi participación en las siguientes licitaciones:</p>
-                
-                <table>
-                    <tr><th style="width:15%;">N° Convocatoria</th><th style="width:30%;">Proyecto</th><th style="width:25%;">Entidad</th><th style="width:15%;">Fecha</th><th style="width:15%;">Estado</th></tr>
-                    ${participadas.length ? participadas.map(l => `
-                        <tr>
-                            <td>${esc(l.convocatoria || '')}</td>
-                            <td>${esc(l.proyecto || '')}</td>
-                            <td>${esc(l.entidad || '')}</td>
-                            <td style="text-align:center;">${fmtDateWord(l.fecha)}</td>
-                            <td style="text-align:center;">${esc(l.estado || '')}</td>
-                        </tr>
-                    `).join('') : '<tr><td colspan="5" style="text-align:center;">No registra participación en licitaciones</td></tr>'}
+                <p style="text-align:justify;font-size:10pt;margin-bottom:12px;">
+                    Luego de examinar la documentación de la invitación, la cual declaro aceptar y conocer, presento mi participación para realizar el servicio de consultoría de acuerdo con las características, requerimientos y plazos detallados en los Términos de Referencia.
+                </p>
+                <p style="text-align:justify;font-size:10pt;margin-bottom:12px;">
+                    Para el efecto presento mi hoja de vida <strong>debidamente firmada y fechada</strong>.
+                </p>
+
+                <table style="border:none;">
+                    <tr><td style="border:none;width:40%;font-weight:bold;">Nombre completo:</td><td style="border:none;">${esc(dp.nombre || config.nombre || '')}</td></tr>
+                    <tr><td style="border:none;font-weight:bold;">Lugar y fecha de nacimiento:</td><td style="border:none;">${esc(dp.lugarExpedicion || '')}, ${fmtDateWord(dp.fechaNacimiento)}</td></tr>
+                    <tr><td style="border:none;font-weight:bold;">Nacionalidad:</td><td style="border:none;">${esc(dp.nacionalidad || '')}</td></tr>
+                    <tr><td style="border:none;font-weight:bold;">N° Cédula de Identidad y lugar de expedición:</td><td style="border:none;">${esc(dp.ci || '')} ${dp.lugarExpedicion ? esc(dp.lugarExpedicion) : ''}</td></tr>
+                    <tr><td style="border:none;font-weight:bold;">País de residencia:</td><td style="border:none;">Bolivia</td></tr>
+                    <tr><td style="border:none;font-weight:bold;">Dirección:</td><td style="border:none;">${esc(dp.direccion || '')}</td></tr>
+                    <tr><td style="border:none;font-weight:bold;">Teléfono:</td><td style="border:none;">${esc(dp.telefono || '')}</td></tr>
+                    <tr><td style="border:none;font-weight:bold;">Correo electrónico:</td><td style="border:none;">${esc(dp.email || '')}</td></tr>
                 </table>
-                
-                <p style="margin-top:16px;">Total de propuestas presentadas: <strong>${participadas.length}</strong></p>
-                <p>Monto total de propuestas: <strong>${bs(participadas.reduce((s, l) => s + (Number(l.monto) || 0), 0))}</strong></p>
-                
+
+                <h3 style="margin-top:16px;">1. FORMACIÓN PROFESIONAL</h3>
+                <table>
+                    <tr><th style="width:22%;">Estudios realizados</th><th style="width:18%;">Especialidad o área</th><th style="width:20%;">Entidad educativa / Universidad</th><th style="width:15%;">Fecha de emisión del título</th><th style="width:25%;">Aspectos detallados</th></tr>
+                    ${formacion.length ? formacion.map(f => `
+                        <tr>
+                            <td>${esc(f.grado || '')}</td>
+                            <td>${esc(f.especialidad || '')}</td>
+                            <td>${esc(f.institucion || '')}</td>
+                            <td style="text-align:center;">${fmtDateWordShort(f.fechaTitulo || f.hasta)}</td>
+                            <td>${esc(f.detalles || '')}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="5" style="text-align:center;">No registra formación profesional</td></tr>'}
+                </table>
+
+                <h3>CURSOS DE ESPECIALIZACIÓN</h3>
+                <table>
+                    <tr><th style="width:25%;">Universidad / Institución</th><th style="width:15%;">Desde</th><th style="width:15%;">Hasta</th><th style="width:30%;">Nombre del Curso</th><th style="width:15%;">Duración en Horas</th></tr>
+                    ${cursos.length ? cursos.map(c => `
+                        <tr>
+                            <td>${esc(c.institucion || '')}</td>
+                            <td style="text-align:center;">${fmtDateWordShort(c.desde)}</td>
+                            <td style="text-align:center;">${fmtDateWordShort(c.hasta)}</td>
+                            <td>${esc(c.curso || '')}</td>
+                            <td style="text-align:center;">${esc(c.horas || '')}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="5" style="text-align:center;">No registra cursos de especialización</td></tr>'}
+                </table>
+
+                <h3>2. EXPERIENCIA PROFESIONAL</h3>
+                <h4 style="font-size:10pt;margin:6px 0;font-weight:bold;">Experiencia Profesional General</h4>
+                <table>
+                    <tr><th style="width:20%;">Fecha de emisión del título</th><th style="width:20%;">Tiempo desde la emisión</th><th style="width:60%;">Aspectos detallados</th></tr>
+                    <tr>
+                        <td style="text-align:center;">${formacion.length > 0 ? fmtDateWordShort(formacion[0].fechaTitulo || formacion[0].hasta) : ''}</td>
+                        <td style="text-align:center;">${añosDesdeTitulo}</td>
+                        <td>${añosDesdeTitulo} de la obtención del título académico y en provisión nacional como ${esc(dp.profesion || '')}</td>
+                    </tr>
+                </table>
+
+                <h4 style="font-size:10pt;margin:6px 0;font-weight:bold;">Experiencia Profesional Específica</h4>
+                <table>
+                    <tr><th style="width:18%;">Contratante o entidad</th><th style="width:25%;">Objeto de la consultoría</th><th style="width:15%;">Cargo en el proyecto</th><th style="width:22%;">Descripción del trabajo realizado</th><th style="width:10%;">Desde</th><th style="width:10%;">Hasta</th></tr>
+                    ${experiencia.length ? experiencia.slice(0, 15).map(e => `
+                        <tr>
+                            <td>${esc(e.entidad || '')}</td>
+                            <td>${esc(e.objeto || '')}</td>
+                            <td>${esc(e.cargo || '')}</td>
+                            <td>${esc(e.descripcion || '')}</td>
+                            <td style="text-align:center;">${fmtDateWordShort(e.desde)}</td>
+                            <td style="text-align:center;">${e.enCurso ? 'En curso' : fmtDateWordShort(e.hasta)}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="6" style="text-align:center;">No registra experiencia profesional específica</td></tr>'}
+                </table>
+
+                <div style="margin-top:12px;padding:8px 10px;border:1px solid #ccc;font-size:9pt;">
+                    <strong>Experiencia específica de ${añosDesdeTitulo || '4'} años, contabilizados a partir de la obtención del primer título académico, en trabajos relacionados a:</strong>
+                    <p style="margin:4px 0;">Estudios hidrológicos o hidrogeológicos, Modelación hidrológica, Balances hídricos, Calidad de agua, Gestión integrada de recursos hídricos, o Manejo integral de cuencas.</p>
+                </div>
+
+                <h3>3. REFERENCIAS LABORALES</h3>
+                <table>
+                    <tr><th style="width:20%;">Contratante</th><th style="width:25%;">Nombre del supervisor</th><th style="width:20%;">Cargo</th><th style="width:20%;">Correo electrónico</th><th style="width:15%;">Teléfono</th></tr>
+                    ${referencias.length ? referencias.slice(0, 3).map(r => `
+                        <tr>
+                            <td>${esc(r.contratante || '')}</td>
+                            <td>${esc(r.supervisor || '')}</td>
+                            <td>${esc(r.cargo || '')}</td>
+                            <td>${esc(r.email || '--')}</td>
+                            <td>${esc(r.telefono || '')}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="5" style="text-align:center;">No registra referencias laborales</td></tr>'}
+                </table>
+
+                <div style="margin-top:20px;font-size:9pt;text-align:justify;">
+                    <p>Entiendo y reconozco que el Contratante no está obligado a aceptar la presente participación y que la selección del Consultor para el presente servicio de consultoría se basará en la mejor calificación de antecedentes académicos y de experiencia.</p>
+                </div>
+
                 <div class="firma">
                     <div class="linea"></div>
                     <div><strong>${esc(dp.nombre || config.nombre || '')}</strong></div>
                     <div class="cargo">${esc(dp.profesion || '')}</div>
-                    <div class="cargo">${esc(config.rni || '')}</div>
-                    <div class="cargo">C.I. ${esc(dp.ci || '')}</div>
+                    <div class="cargo">${esc(dp.registroProfesional || config.rni || '')}</div>
+                    <div class="cargo">NIT: ${esc(dp.nit || '')}</div>
+                    <div class="fecha-firma">Fecha: ${new Date().toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                 </div>
                 `;
             }
@@ -1438,7 +1549,8 @@
 
         function exportWord(tipo) {
             const htmlContent = generarHTMLWord(tipo);
-            const filename = `Ing_Antequera_${tipo.toUpperCase()}_${new Date().toISOString().slice(0,10)}.doc`;
+            const fecha = new Date().toISOString().slice(0,10);
+            const filename = `Ing_Antequera_${tipo.toUpperCase()}_${fecha}.doc`;
             
             const blob = new Blob([htmlContent], { type: 'application/msword;charset=utf-8' });
             const link = document.createElement('a');
@@ -1565,9 +1677,21 @@
             exp.forEach(e => {
                 const desde = e.desde || e.fechaInicio;
                 const hasta = e.hasta || e.fechaFin;
-                if (desde && hasta) {
+                if (desde && hasta && !e.enCurso) {
                     const years = diffYears(desde, hasta);
                     if (years > 0) totalYears += years;
+                }
+            });
+
+            // Si hay proyectos en curso, sumar desde inicio hasta hoy
+            exp.forEach(e => {
+                if (e.enCurso) {
+                    const desde = e.desde || e.fechaInicio;
+                    if (desde) {
+                        const hoy = new Date().toISOString().slice(0, 10);
+                        const years = diffYears(desde, hoy);
+                        if (years > 0) totalYears += years;
+                    }
                 }
             });
 
@@ -1617,9 +1741,9 @@
                     ${cursos.length ? `
                         <div class="table-wrap">
                             <table>
-                                <thead><tr><th>Curso</th><th>Institución</th><th>Horas</th><th>Año</th></tr></thead>
+                                <thead><tr><th>Curso</th><th>Institución</th><th>Horas</th><th>Desde</th><th>Hasta</th></tr></thead>
                                 <tbody>${cursos.map(c => `
-                                    <tr><td>${esc(c.curso || '')}</td><td>${esc(c.institucion || '')}</td><td class="tnum">${esc(c.horas || '')}</td><td class="tnum">${esc(c.anio || '')}</td></tr>
+                                    <tr><td>${esc(c.curso || '')}</td><td>${esc(c.institucion || '')}</td><td class="tnum">${esc(c.horas || '')}</td><td class="tnum">${fmtDate(c.desde)}</td><td class="tnum">${fmtDate(c.hasta)}</td></tr>
                                 `).join('')}</tbody>
                             </table>
                         </div>
@@ -1632,32 +1756,44 @@
                 <div class="panel-body">
                     ${exp.length ? `
                         <div style="margin-bottom:12px;font-size:13px;color:var(--text-soft);">Total de años de experiencia: <strong>${totalYears}</strong> años</div>
-                        <div class="gantt-container">
-                            ${exp.map(e => {
-                                const desde = e.desde || e.fechaInicio;
-                                const hasta = e.hasta || e.fechaFin;
-                                let years = 0;
-                                if (desde && hasta) {
-                                    years = diffYears(desde, hasta);
-                                }
-                                const label = e.objeto || e.cargo || 'Experiencia';
-                                const sub = e.entidad || '';
-                                const width = Math.min(100, Math.max(5, years * 10));
-                                return `
-                                    <div class="gantt-row">
-                                        <div class="gantt-label">
-                                            ${esc(label)}
-                                            <span class="gantt-sub">${esc(sub)}</span>
-                                        </div>
-                                        <div class="gantt-track">
-                                            <div class="gantt-bar experiencia" style="width:${width}%;">
-                                                ${years > 0 ? years + ' años' : ''}
-                                            </div>
-                                        </div>
-                                        <div class="gantt-duration">${fmtDateShort(desde)} - ${e.enCurso ? 'En curso' : fmtDateShort(hasta)}</div>
-                                    </div>
-                                `;
-                            }).join('')}
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Entidad / Empresa</th>
+                                        <th>Objeto</th>
+                                        <th>Monto (Bs)</th>
+                                        <th>Cargo</th>
+                                        <th>Desde</th>
+                                        <th>Hasta</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${exp.map((e, i) => {
+                                        const desde = e.desde || e.fechaInicio;
+                                        const hasta = e.hasta || e.fechaFin;
+                                        const entidad = e.entidad || e.empresa || '';
+                                        const objeto = e.objeto || e.proyecto || '';
+                                        const cargo = e.cargo || '';
+                                        const monto = e.monto || 0;
+                                        const enCurso = e.enCurso || false;
+                                        return `
+                                            <tr>
+                                                <td style="text-align:center;">${i + 1}</td>
+                                                <td>${esc(entidad)}</td>
+                                                <td>${esc(objeto)}</td>
+                                                <td style="text-align:right;">${bs(monto)}</td>
+                                                <td>${esc(cargo)}</td>
+                                                <td style="white-space:nowrap;">${fmtDate(desde)}</td>
+                                                <td style="white-space:nowrap;">${enCurso ? 'En curso' : fmtDate(hasta)}</td>
+                                                <td><span class="stamp ${enCurso ? 'en-curso' : ''}">${enCurso ? 'En curso' : 'Finalizado'}</span></td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     ` : '<div class="empty">Sin experiencia registrada.</div>'}
                 </div>
