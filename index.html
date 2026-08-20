@@ -17,9 +17,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* ============================================================
-           ESTILOS COMPLETOS
-           ============================================================ */
         :root {
             --bg: #F2F0EB;
             --surface: #FFFFFF;
@@ -228,7 +225,7 @@
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 40px 36px;
-            max-width: 400px;
+            max-width: 450px;
             width: 100%;
             box-shadow: var(--shadow-lg);
         }
@@ -284,6 +281,63 @@
             text-decoration: none;
         }
         .login-box .forgot-password a:hover { text-decoration: underline; }
+
+        /* Configuración Firebase en el login */
+        .login-box .firebase-config {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border);
+        }
+        .login-box .firebase-config h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .login-box .firebase-config .hint {
+            font-size: 12px;
+            color: var(--text-soft);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .login-box .firebase-config textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            resize: vertical;
+            min-height: 100px;
+            background: #fff;
+            color: var(--text);
+            transition: var(--transition);
+        }
+        .login-box .firebase-config textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26,74,92,0.1);
+        }
+        .login-box .firebase-config .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            margin-top: 8px;
+            padding: 6px 10px;
+            border-radius: var(--radius);
+            background: var(--gantt-bg);
+        }
+        .login-box .firebase-config .status .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .login-box .firebase-config .status .dot.on { background: var(--success); }
+        .login-box .firebase-config .status .dot.off { background: var(--danger); }
+        .login-box .firebase-config .btn { width: 100%; justify-content: center; margin-top: 8px; }
 
         .panel {
             background: var(--surface);
@@ -353,7 +407,6 @@
             font-weight: 600;
             cursor: pointer;
             user-select: none;
-            position: relative;
             white-space: nowrap;
         }
         th:hover { background: var(--surface-hover); }
@@ -740,6 +793,24 @@
             cursor: pointer;
         }
 
+        .cv-edit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .cv-edit-grid .field input {
+            font-size: 13px;
+            padding: 8px 10px;
+        }
+        .cv-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin: 16px 0 10px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--border);
+        }
+
         .export-options {
             display: flex;
             gap: 12px;
@@ -760,24 +831,6 @@
         .export-options input[type="checkbox"] {
             accent-color: var(--primary);
             cursor: pointer;
-        }
-
-        .cv-edit-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .cv-edit-grid .field input {
-            font-size: 13px;
-            padding: 8px 10px;
-        }
-        .cv-section-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--primary);
-            margin: 16px 0 10px;
-            padding-bottom: 4px;
-            border-bottom: 2px solid var(--border);
         }
 
         #toast {
@@ -877,6 +930,20 @@
                     <a id="goto-login-reset">Volver al inicio de sesión</a>
                 </div>
             </form>
+
+            <div class="firebase-config">
+                <h4>🔌 Configurar Firebase</h4>
+                <div class="hint">
+                    Pega aquí tu configuración de Firebase (Firebase Console → Configuración del proyecto → Tus aplicaciones → Configuración del SDK)
+                </div>
+                <textarea id="firebase-config-input" placeholder='{"apiKey":"AIzaSy...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+                <div class="status" id="firebase-status">
+                    <span class="dot off" id="status-dot"></span>
+                    <span id="status-text">No configurado</span>
+                </div>
+                <button class="btn btn-primary" id="btn-connect-firebase">🔗 Conectar Firebase</button>
+                <button class="btn btn-ghost btn-sm" id="btn-disconnect-firebase" style="margin-top:4px;">Desconectar</button>
+            </div>
         </div>
     </div>
 
@@ -896,7 +963,7 @@
                 <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
                 <a href="licitaciones.html" class="btn btn-sm btn-accent goto-lic">📋 Gestor de Licitaciones</a>
             </div>
-            <div class="nav-foot mono">RNI 28.106 · v3.1</div>
+            <div class="nav-foot mono">RNI 28.106 · v3.2</div>
         </aside>
         <main id="main"></main>
     </div>
@@ -1008,11 +1075,12 @@
             pagoFilters: { fecha: '', cliente: '', estado: '' },
             pagoSort: { column: null, direction: 'asc' },
             expFilters: { entidad: '', objeto: '', cargo: '', desde: '', hasta: '' },
-            expSort: { column: null, direction: 'asc' }
+            expSort: { column: null, direction: 'asc' },
+            firebaseConnected: false
         };
 
         // ============================================================
-        // ICONS (definidos para no repetir)
+        // ICONS
         // ============================================================
         const ICONS = {
             dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
@@ -1048,12 +1116,24 @@
             } catch (e) { return null; }
         }
 
+        function updateFirebaseStatus(connected, message) {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            if (connected) {
+                dot.className = 'dot on';
+                text.textContent = message || '✅ Conectado a Firebase';
+            } else {
+                dot.className = 'dot off';
+                text.textContent = message || '❌ No configurado';
+            }
+        }
+
         async function initFirebase() {
             const cfg = getSavedFirebaseConfig();
             if (!cfg) {
+                updateFirebaseStatus(false, '⚠️ Configura Firebase');
                 document.getElementById('login-container').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
-                showLoginError('⚠️ Configura Firebase primero. Ve a Configuración después de iniciar sesión.');
                 return;
             }
             try {
@@ -1061,6 +1141,8 @@
                 fbAuth = firebase.auth();
                 fbDb = firebase.firestore();
                 cloudReady = true;
+                updateFirebaseStatus(true, '✅ Conectado a Firebase');
+
                 await fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 fbAuth.onAuthStateChanged(async (user) => {
                     S.user = user;
@@ -1077,10 +1159,21 @@
                 });
             } catch (e) {
                 console.error('Firebase init failed', e);
+                updateFirebaseStatus(false, '❌ Error: ' + e.message);
                 document.getElementById('login-container').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
                 showLoginError('Error al conectar con Firebase. Verifica tu configuración.');
             }
+        }
+
+        function connectFirebase(configObj) {
+            localStorage.setItem('hidro_firebase_config', JSON.stringify(configObj));
+            location.reload();
+        }
+
+        function disconnectFirebase() {
+            localStorage.removeItem('hidro_firebase_config');
+            location.reload();
         }
 
         // ============================================================
@@ -1177,16 +1270,6 @@
             }
         }
 
-        function connectFirebase(configObj) {
-            localStorage.setItem('hidro_firebase_config', JSON.stringify(configObj));
-            location.reload();
-        }
-
-        function disconnectFirebase() {
-            localStorage.removeItem('hidro_firebase_config');
-            location.reload();
-        }
-
         // ============================================================
         // LOAD DATA
         // ============================================================
@@ -1270,14 +1353,14 @@
         }
 
         // ============================================================
-        // HELPERS
+        // HELPERS DE NEGOCIO
         // ============================================================
         function cotSubtotal(c) { return c.items.reduce((s, it) => s + (Number(it.pu) || 0) * (Number(it.cantidad) || 0), 0); }
         function cotTotal(c) { return cotSubtotal(c) - (Number(c.descuento) || 0); }
         function pagoEstado(p) { const pend = Number(p.monto) - Number(p.montoPagado || 0); if (pend <= 0.001) return 'pagado'; if (Number(p.montoPagado || 0) > 0) return 'parcial'; return 'pendiente'; }
 
         // ============================================================
-        // FUNCIONES DE FILTRO Y ORDENAMIENTO
+        // FUNCIONES DE FILTRO
         // ============================================================
         function applyCotFiltersAndSort(data) {
             let result = [...data];
@@ -1506,7 +1589,6 @@
             const topEntidades = Object.entries(porEntidad).sort((a, b) => b[1] - a[1]).slice(0, 8);
             const maxEntidad = Math.max(1, ...topEntidades.map(x => x[1]));
 
-            // Obtener últimas 3 cotizaciones aceptadas
             const ultimasAceptadas = cots.filter(c => c.estado === 'aceptada').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')).slice(0, 3);
 
             return `
@@ -1620,7 +1702,6 @@
             </div>
             ` : ''}
 
-            <!-- Últimas cotizaciones aceptadas -->
             ${ultimasAceptadas.length ? `
             <div class="panel">
                 <div class="panel-h"><h3>📋 Últimas cotizaciones aceptadas</h3></div>
@@ -1665,7 +1746,7 @@
         function viewCotizaciones() {
             const rows = applyCotFiltersAndSort(S.cotizaciones);
             const estados = ['borrador', 'enviada', 'aceptada', 'rechazada'];
-            
+
             return `
             <div class="page-head">
                 <div><p class="eyebrow">Documentos</p><h1>Cotizaciones</h1><p>Crea, edita y exporta tus cotizaciones a PDF.</p></div>
@@ -1730,7 +1811,7 @@
         function viewPagos() {
             const rows = applyPagoFiltersAndSort(S.pagos);
             const estados = ['pendiente', 'parcial', 'pagado'];
-            
+
             return `
             <div class="page-head">
                 <div><p class="eyebrow">Cobros</p><h1>Pagos por cobrar</h1><p>Registro de pagos con fechas claras y estados actualizados.</p></div>
@@ -1832,7 +1913,7 @@
             const ganttYears = S.ganttYears || 10;
             const startDate = new Date(now);
             startDate.setFullYear(now.getFullYear() - ganttYears);
-            
+
             const expFiltrada = S.experiencia.filter(e => new Date(e.desde + 'T00:00:00') >= startDate).sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
             const formacionFiltrada = S.formacion.filter(f => new Date(f.desde + 'T00:00:00') >= startDate).sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
             const cursosFiltrados = S.cursos.filter(c => new Date(c.desde + 'T00:00:00') >= startDate).sort((a, b) => (a.desde || '').localeCompare(b.desde || ''));
@@ -1848,7 +1929,7 @@
             }
             const rangeMs = Math.max(1, maxDate.getTime() - minDate.getTime());
             const edad = calcularEdad(S.datosPersonales.fechaNacimiento);
-            
+
             const entidades = [...new Set(allRows.map(e => e.entidad).filter(Boolean))].sort();
             const cargos = [...new Set(allRows.map(e => e.cargo).filter(Boolean))].sort();
 
@@ -1865,7 +1946,6 @@
                 </div>
             </div>
 
-            <!-- Hoja de vida editable -->
             <div class="panel" style="margin-bottom:20px;">
                 <div class="panel-h">
                     <h3>📋 Hoja de vida — ${S.editingCV ? 'Editando' : 'Resumen'}</h3>
@@ -1943,7 +2023,6 @@
                 </div>
             </div>
 
-            <!-- Gantt -->
             <div class="panel" style="margin-bottom:20px;">
                 <div class="panel-h">
                     <h3>📊 Diagrama de Gantt</h3>
@@ -2033,7 +2112,6 @@
                 </div>
             </div>
 
-            <!-- Tabla de experiencia -->
             <div class="panel">
                 <div class="panel-h">
                     <h3>Lista de proyectos (${rows.length} de ${allRows.length} totales)</h3>
@@ -2237,14 +2315,12 @@
                                 alignment: AlignmentType.CENTER,
                                 spacing: { after: 400 }
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '1. DATOS GENERALES', bold: true, size: 18, font: 'Arial' })
                                 ],
                                 spacing: { after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2321,14 +2397,12 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '2. FORMACIÓN ACADÉMICA', bold: true, size: 18, font: 'Arial' })
                                 ],
                                 spacing: { before: 200, after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2357,14 +2431,12 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '3. CURSOS DE ESPECIALIZACIÓN', bold: true, size: 18, font: 'Arial' })
                                 ],
                                 spacing: { before: 200, after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2392,14 +2464,12 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '4. EXPERIENCIA EN CONSULTORÍAS EN GENERAL', bold: true, size: 18, font: 'Arial' })
                                 ],
                                 spacing: { before: 200, after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2431,7 +2501,6 @@
                                     })
                                 ]
                             }),
-
                             ...(tipo === 'A-5' ? [
                                 new Paragraph({
                                     children: [
@@ -2469,7 +2538,6 @@
                                     ]
                                 })
                             ] : []),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'DECLARACIÓN JURADA', bold: true, size: 18, font: 'Arial' })
@@ -2658,7 +2726,6 @@
                                 alignment: AlignmentType.CENTER,
                                 spacing: { after: 400 }
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'Luego de examinar la documentación de la invitación, la cual declaro aceptar y conocer, presento mi participación para realizar el servicio de consultoría de acuerdo con las características, requerimientos y plazos detallados en los Términos de Referencia.', size: 18, font: 'Arial' })
@@ -2671,7 +2738,6 @@
                                 ],
                                 spacing: { after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2724,14 +2790,12 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '1. FORMACIÓN [PROFESIONAL].', bold: true, size: 20, font: 'Arial' })
                                 ],
                                 spacing: { before: 300, after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2757,14 +2821,12 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'CURSOS DE ESPECIALIZACIÓN', bold: true, size: 18, font: 'Arial' })
                                 ],
                                 spacing: { before: 200, after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2793,21 +2855,18 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '2. EXPERIENCIA', bold: true, size: 20, font: 'Arial' })
                                 ],
                                 spacing: { before: 300, after: 200 }
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '2.1. EXPERIENCIA [PROFESIONAL] GENERAL.', bold: true, size: 16, font: 'Arial' })
                                 ],
                                 spacing: { after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2826,14 +2885,12 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '2.2. Experiencia [PROFESIONAL] Específica.', bold: true, size: 16, font: 'Arial' })
                                 ],
                                 spacing: { before: 200, after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2860,21 +2917,18 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '3. REFERENCIAS LABORALES.', bold: true, size: 18, font: 'Arial' })
                                 ],
                                 spacing: { before: 300, after: 200 }
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'Detalle las referencias labores correspondientes a las tres últimas instituciones donde trabajó:', size: 16, font: 'Arial' })
                                 ],
                                 spacing: { after: 200 }
                             }),
-
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2899,14 +2953,12 @@
                                     })
                                 ]
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'Entiendo y reconozco que el Contratante no está obligado a aceptar la presente participación y que la selección del Consultor para el presente servicio de consultoría se basará en la mejor calificación de antecedentes académicos y de experiencia.', size: 16, font: 'Arial' })
                                 ],
                                 spacing: { before: 300, after: 300 }
                             }),
-
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'Firma del participante:', bold: true, size: 16, font: 'Arial' })
@@ -4079,6 +4131,10 @@
         function initLoginEvents() {
             document.getElementById('login-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (!cloudReady) {
+                    showLoginError('⚠️ Primero conecta Firebase en la sección "Configurar Firebase"');
+                    return;
+                }
                 const email = document.getElementById('login-email').value.trim();
                 const password = document.getElementById('login-password').value;
                 if (!email || !password) {
@@ -4094,6 +4150,10 @@
 
             document.getElementById('register-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (!cloudReady) {
+                    showLoginError('⚠️ Primero conecta Firebase en la sección "Configurar Firebase"');
+                    return;
+                }
                 const email = document.getElementById('register-email').value.trim();
                 const password = document.getElementById('register-password').value;
                 if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
@@ -4107,6 +4167,10 @@
 
             document.getElementById('reset-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (!cloudReady) {
+                    showLoginError('⚠️ Primero conecta Firebase en la sección "Configurar Firebase"');
+                    return;
+                }
                 const email = document.getElementById('reset-email').value.trim();
                 if (!email) { showLoginError('Ingresa tu correo electrónico.'); return; }
                 const btn = document.getElementById('btn-reset');
@@ -4139,6 +4203,22 @@
                 document.getElementById('register-form').style.display = 'none';
                 document.getElementById('reset-form').style.display = 'block';
                 hideLoginError();
+            };
+
+            document.getElementById('btn-connect-firebase').onclick = () => {
+                const input = document.getElementById('firebase-config-input');
+                try {
+                    const cfg = JSON.parse(input.value);
+                    connectFirebase(cfg);
+                } catch (e) {
+                    showLoginError('❌ JSON inválido. Verifica la configuración.');
+                }
+            };
+
+            document.getElementById('btn-disconnect-firebase').onclick = () => {
+                if (confirm('¿Desconectar Firebase? Perderás la conexión con la nube.')) {
+                    disconnectFirebase();
+                }
             };
         }
 
@@ -4184,14 +4264,12 @@
                 };
             }
 
-            // Botones de exportación a Word
             const btnA5 = document.getElementById('btn-export-a5');
             if (btnA5) btnA5.onclick = exportA5;
 
             const btnParticipacion = document.getElementById('btn-export-participacion');
             if (btnParticipacion) btnParticipacion.onclick = exportParticipacion;
 
-            // Editar hoja de vida
             const btnEditCV = document.getElementById('btn-edit-cv');
             if (btnEditCV) {
                 btnEditCV.onclick = () => {
@@ -4200,7 +4278,6 @@
                 };
             }
 
-            // Guardar hoja de vida
             const btnSaveCV = document.getElementById('btn-save-cv');
             if (btnSaveCV) {
                 btnSaveCV.onclick = async () => {
@@ -4247,7 +4324,6 @@
                 };
             }
 
-            // Agregar formación
             const btnAddFormacion = document.getElementById('cv-add-formacion');
             if (btnAddFormacion) {
                 btnAddFormacion.onclick = () => {
@@ -4306,13 +4382,11 @@
                 };
             }
 
-            // Importar Excel
             const btnImport = document.getElementById('btn-import-excel');
             if (btnImport) {
                 btnImport.onclick = openImportModal;
             }
 
-            // Cotizaciones
             const btnNew = document.getElementById('btn-new-cot');
             if (btnNew) btnNew.onclick = () => openCotModal(null);
             main.querySelectorAll('[data-edit-cot]').forEach(b => b.onclick = () => openCotModal(S.cotizaciones.find(c => c.id === b.dataset.editCot)));
@@ -4338,7 +4412,6 @@
                 toast('Cotización eliminada.');
             });
 
-            // Pagos
             main.querySelectorAll('[data-register-pago]').forEach(b => {
                 b.onclick = () => {
                     const pago = S.pagos.find(p => p.id === b.dataset.registerPago);
@@ -4356,7 +4429,6 @@
             const btnNewPago = document.getElementById('btn-new-pago');
             if (btnNewPago) btnNewPago.onclick = () => openPagoModal(null);
 
-            // Clientes
             const btnAddCliente = document.getElementById('btn-add-cliente');
             if (btnAddCliente) btnAddCliente.onclick = async () => {
                 const val = document.getElementById('new-cliente-nombre').value.trim();
@@ -4397,7 +4469,6 @@
                 }
             });
 
-            // Experiencia
             const btnNewExp = document.getElementById('btn-new-exp');
             if (btnNewExp) btnNewExp.onclick = () => openExpModal(null);
             main.querySelectorAll('[data-edit-exp]').forEach(b => b.onclick = () => openExpModal(S.experiencia.find(e => e.id === b.dataset.editExp)));
@@ -4411,7 +4482,6 @@
             const btnExport = document.getElementById('btn-export-excel');
             if (btnExport) btnExport.onclick = exportHojaVida;
 
-            // Filtros - Cotizaciones
             const cotFilterApply = document.getElementById('cot-filter-apply');
             if (cotFilterApply) {
                 cotFilterApply.onclick = () => {
@@ -4427,7 +4497,6 @@
                 cotFilterClear.onclick = clearCotFilters;
             }
 
-            // Filtros - Pagos
             const pagoFilterApply = document.getElementById('pago-filter-apply');
             if (pagoFilterApply) {
                 pagoFilterApply.onclick = () => {
@@ -4443,7 +4512,6 @@
                 pagoFilterClear.onclick = clearPagoFilters;
             }
 
-            // Filtros - Experiencia
             const expFilterApply = document.getElementById('exp-filter-apply');
             if (expFilterApply) {
                 expFilterApply.onclick = () => {
@@ -4461,7 +4529,6 @@
                 expFilterClear.onclick = clearExpFilters;
             }
 
-            // Enter en filtros
             document.querySelectorAll('.filter-bar input').forEach(input => {
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
@@ -4471,7 +4538,6 @@
                 });
             });
 
-            // Configuración
             const btnConnect = document.getElementById('btn-connect-firebase');
             if (btnConnect) btnConnect.onclick = () => {
                 const input = document.getElementById('firebase-config-input');
@@ -4529,6 +4595,12 @@
         window.clearPagoFilters = clearPagoFilters;
         window.clearExpFilters = clearExpFilters;
         window.calcularEdad = calcularEdad;
+
+        const savedConfig = getSavedFirebaseConfig();
+        if (savedConfig) {
+            document.getElementById('firebase-config-input').value = JSON.stringify(savedConfig, null, 2);
+            updateFirebaseStatus(true, '✅ Configuración guardada');
+        }
 
         initLoginEvents();
         initFirebase();
