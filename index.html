@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ing. Carlos Antequera — Suite Profesional</title>
+    <title>Ing. Antequera — Suite Profesional</title>
     <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/tu-usuario/tu-repo/main/favicon.ico">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -498,7 +498,7 @@
         .modal {
             background: var(--surface);
             border-radius: var(--radius);
-            max-width: 760px;
+            max-width: 780px;
             width: 100%;
             box-shadow: var(--shadow-lg);
             border: 1px solid var(--border);
@@ -552,6 +552,7 @@
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
         .row4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+        .row5 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 10px; }
 
         .cv-edit-grid {
             display: grid;
@@ -589,6 +590,36 @@
         }
         #toast.show { opacity: 1; transform: translateY(0); }
 
+        .file-upload-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 14px;
+        }
+        .file-upload-area:hover {
+            border-color: var(--primary);
+            background: var(--surface-hover);
+        }
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+        .file-upload-area .icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+        .file-upload-area .text {
+            color: var(--text-soft);
+            font-size: 14px;
+        }
+        .file-upload-area .sub {
+            color: var(--text-soft);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
         @media (max-width: 768px) {
             #sidebar { width: 64px; padding: 16px 8px; }
             .brand-txt { display: none; }
@@ -597,7 +628,7 @@
             .nav-foot { display: none; }
             .nav-user { display: none; }
             main { padding: 20px 16px; }
-            .row2, .row3, .row4 { grid-template-columns: 1fr; }
+            .row2, .row3, .row4, .row5 { grid-template-columns: 1fr; }
             .cv-edit-grid { grid-template-columns: 1fr; }
             .gantt-label { width: 100px; font-size: 11px; }
             .page-head { flex-direction: column; }
@@ -681,7 +712,7 @@
                 <div class="email" id="user-email">usuario@email.com</div>
                 <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
             </div>
-            <div class="nav-foot mono">RNI 28.106 · v2.3</div>
+            <div class="nav-foot mono">RNI 28.106 · v2.4</div>
         </aside>
         <main id="main"></main>
     </div>
@@ -723,6 +754,18 @@
             return Math.max(0, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
         }
 
+        function calcularEdad(fechaNacimiento) {
+            if (!fechaNacimiento) return '';
+            const hoy = new Date();
+            const nac = new Date(fechaNacimiento + 'T00:00:00');
+            let edad = hoy.getFullYear() - nac.getFullYear();
+            const m = hoy.getMonth() - nac.getMonth();
+            if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) {
+                edad--;
+            }
+            return edad;
+        }
+
         function esc(s) {
             return String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
         }
@@ -745,86 +788,7 @@
         };
 
         // ============================================================
-        // DATOS DE LA HOJA DE VIDA
-        // ============================================================
-        const DATOS_PERSONALES = {
-            nombre: 'CARLOS ANDRES ANTEQUERA ENCINAS',
-            ci: '7503322',
-            lugarExpedicion: 'CHUQUISACA',
-            edad: '34',
-            nacionalidad: 'BOLIVIANA',
-            profesion: 'INGENIERO CIVIL',
-            registroProfesional: '28.106'
-        };
-
-        const FORMACION_ACADEMICA = [
-            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2008-02-01', hasta: '2012-12-01', grado: 'LICENCIATURA EN INGENIERIA CIVIL', titulo: '2013-03-15' },
-            { institucion: 'Universidad San Sebastián Chile', desde: '2014-05-01', hasta: '2014-10-01', grado: 'DIPLOMADO: Diseño en Ingeniería Hidráulica', titulo: '2014-10-01' },
-            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2016-07-01', hasta: '2017-12-01', grado: 'ESPECIALIDAD SUPERIOR En Formulación Y Evaluación De Proyectos De Manejo Integral De Cuencas', titulo: '2019-02-04' },
-            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2017-07-01', hasta: '2018-12-01', grado: 'MAESTRÍA: en ingeniería Hidráulica', titulo: '2023-08-21' }
-        ];
-
-        const CURSOS_ESPECIALIZACION = [
-            { institucion: 'Capacitación Profesional Ingeniería Civil Bolivia EMPRESA CONSTRUCTORA FEYOBRA', desde: '2021-02-01', hasta: '2021-02-01', curso: 'Modelación numérica de obras Hidráulicas con el software Iber', horas: 30 },
-            { institucion: 'Ministerio de Medio Ambiente y Agua VRHR UCEP-MiRiego', desde: '2019-11-01', hasta: '2020-04-01', curso: 'Riego tecnificado para técnicos de Acompañantes / Asistencia Técnica / Seguimiento y Evaluación técnica', horas: 120 },
-            { institucion: 'Ministerio de Medio Ambiente y Agua', desde: '2018-10-01', hasta: '2018-10-01', curso: 'Diseño Optimo de redes de riego a turnos Mediante el Software GESTAR', horas: 20 },
-            { institucion: 'Cooperación Suiza, Ministerio de Medio Ambiente y Agua', desde: '2017-02-01', hasta: '2017-07-01', curso: 'Cálculo e interpretación del balance hídrico superficial', horas: 48 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-05-08', hasta: '2014-05-14', curso: 'HIDROLOGIA APLICADA', horas: 22 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-06-09', hasta: '2014-06-13', curso: 'SOCAVACION EN RIOS Y PUENTES', horas: 22 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-07-09', hasta: '2014-07-12', curso: 'OBRAS HIDRAULICAS MENORES', horas: 22 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-08-28', hasta: '2014-10-04', curso: 'PRESAS Y EMBALSES', horas: 22 },
-            { institucion: 'CENTRO EMPRESARIAL LATINO AMERICANO CEMLA', desde: '2014-09-29', hasta: '2014-10-06', curso: 'PROYECTOS DE RIEGO', horas: 22 },
-            { institucion: 'SEDERI LA PAZ, Universidad Mayor de San Andrés', desde: '2013-08-01', hasta: '2013-08-01', curso: 'Diseño de Obras Hidráulicas para riego y Agua Potable', horas: 32 },
-            { institucion: 'Sociedad de Ingenieros de Bolivia Departamental Chuquisaca', desde: '2012-04-01', hasta: '2012-04-01', curso: 'Hidrología Aplicada Computarizada para Diseño de Obras Hidráulicas', horas: 32 },
-            { institucion: 'CENTRO DE CAPACITACIÓN "C.E.P.R.A."', desde: '2022-10-01', hasta: '2022-10-01', curso: 'SEWERCAD - APLICADO A REDES DE ALCANTARILLADO SANITARIO Y PLUVIAL', horas: 30 },
-            { institucion: 'Universidad Mayor Real y Pontificia de San Francisco Xavier de Chuquisaca', desde: '2021-09-01', hasta: '2021-09-01', curso: 'Docente del curso de formación: "Uso de EPANET"', horas: 30 }
-        ];
-
-        // ============================================================
-        // EXPERIENCIA COMPLETA
-        // ============================================================
-        const EXPERIENCIA_COMPLETA = [
-            { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO TESA CONSTRUCCIÓN CKOCHAS, ATAJADOS Y MICRORIEGOS COMUNIDAD SAN BLAS ALTO', monto: 60000, cargo: 'Especialista Hidráulico', desde: '2013-04-07', hasta: '2013-08-05' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Proyecto Manejo Integral Cuenca Tarabuco Fase III', monto: 479218.75, cargo: 'Fiscal de obra', desde: '2013-06-05', hasta: '2013-10-29' },
-            { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO A NIVEL TESA "CONSTRUCCIÓN SISTEMA DE RIEGO COMUNIDAD SAN ANTONIO"', monto: 125000, cargo: 'Especialista Hidráulico', desde: '2014-03-15', hasta: '2014-05-24' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales MIC Parapeti Zona Alta Fase IV', monto: 939415, cargo: 'Fiscal de obra', desde: '2014-05-02', hasta: '2014-09-30' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Alcantarillado Sanitario La Tapera', monto: 908211.34, cargo: 'Fiscal de obra', desde: '2015-01-01', hasta: '2015-12-31' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Alcantarillado Sanitario Villa Charcas', monto: 4259084.31, cargo: 'Fiscal de obra', desde: '2015-01-01', hasta: '2015-12-31' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones transversales y Longitudinales PMIC Horcas Fase I', monto: 670000, cargo: 'Supervisor de obra', desde: '2015-07-27', hasta: '2015-11-20' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción Diques de Gavión y HºCº Proyecto Manejo Integral Cuenca Represas Yana Khakha y Challhua Mayu', monto: 2689305.45, cargo: 'Fiscal de obra', desde: '2015-10-27', hasta: '2017-12-19' },
-            { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'AJUSTE Y COMPLEMENTACIÓN DEL ESTUDIO DEL PROYECTO CONSTRUCCIÓN REPRESA CHIUTARA (POTOSÍ)', monto: 245000, cargo: 'Especialista Hidráulico', desde: '2016-03-22', hasta: '2016-06-25' },
-            { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISION TECNICA APROVECHAMIENTO DE LOS RECURSOS HIDRICOS EN EL MUNICIPIO DE HUACARETA PAQUETE 4: USO DE FUENTE DE AGUA PARA AFRONTAR LA SEQUIA AGUA BUENA', monto: 508000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2016-07-28', hasta: '2017-03-06' },
-            { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISIÓN TECNICA APROVECHAMIENTO DE LOS RECURSOS HIDRICOS EN EL MUNICIPIO DE HUACARETA PAQUETE 5: USO DE FUENTE DE AGUA PARA AFRONTAR LA SEQUIA YERENDA', monto: 39360, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2016-10-26', hasta: '2017-06-04' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales, PMIC Horcas Fase II (Comunidad Sauce Molino)', monto: 458089.49, cargo: 'Fiscal de obra', desde: '2016-10-17', hasta: '2016-12-28' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de diques Transversales de Gavión, Atajados y Sistemas de Riego tecnificado con el Proyecto MIC - Rio Presto', monto: 1645343.96, cargo: 'Fiscal de obra', desde: '2016-10-26', hasta: '2017-05-31' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales, PMIC Horcas Fase II (Comunidad San Juan de Horcas)', monto: 356979.6, cargo: 'Fiscal de obra', desde: '2016-11-23', hasta: '2017-03-23' },
-            { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN CONSTRUCCIÓN SISTEMA DE MICRORIEGO EN LA COMUNIDAD DE MOLANI', monto: 120000, cargo: 'Especialista Hidráulico', desde: '2016-12-14', hasta: '2017-05-13' },
-            { id: uid(), entidad: 'Consultora M&R', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN CONSTRUCCIÓN SISTEMA DE MICRORIEGO COMUNIDAD DE PUCA PAMPA', monto: 198000, cargo: 'Especialista en Hidrología e Hidráulico', desde: '2017-01-01', hasta: '2017-07-01' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones transversales y Longitudinales PMIC Horcas Sopachuy Fase III Zona Cuenca Media', monto: 407906.13, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Gaviones Transversales y Longitudinales PMIC Horcas Sopachuy Fase III Zona Cuenca Baja', monto: 367198.18, cargo: 'Fiscal de obra', desde: '2017-11-22', hasta: '2018-08-17' },
-            { id: uid(), entidad: 'Gobierno Autónomo de Chuquisaca', objeto: 'Construcción de Obras Hidráulicas MIC Rio San Lucas Zona Alta', monto: 1997886.05, cargo: 'Fiscal de obra', desde: '2017-12-05', hasta: '2018-12-28' },
-            { id: uid(), entidad: 'Consultora INCOFER', objeto: 'SUPERVISÓN TECNICA MEJORAMIENTO DE LOS CANALES DE RIEGO AREA URBANA CULPINA, CON ENFOQUE DE CAMBIO CLIMATICO', monto: 195000, cargo: 'Especialista Hidráulico', desde: '2018-03-28', hasta: '2019-12-24' },
-            { id: uid(), entidad: 'Consultora DESMA SRL', objeto: 'ESTUDIO DE DISEÑO TECNICO DE PREINVERSIÓN PROYECTO MEJORAMIENTO DE RIEGO ISCU ISCU, YOCALLA, POTOSI', monto: 250468.72, cargo: 'Especialista Hidráulico', desde: '2018-06-01', hasta: '2018-09-05' },
-            { id: uid(), entidad: 'Constructora y Consultora GUTIQUIGAM', objeto: 'CONST. CANAL DE RIEGO SAUSIWAJ (EDTP)', monto: 1292639.82, cargo: 'Especialista Hidráulico', desde: '2018-08-15', hasta: '2019-02-22' },
-            { id: uid(), entidad: 'Consultora y Constructora CONSTICONS SRL', objeto: 'EDTP CONSTRUCCIÓN REPRESA Y SISTEMA DE RIEGO TURURUMBA', monto: 685229.89, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2019-03-01', hasta: '2019-11-30' },
-            { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Potable Achuma Z. Alta (Camataqui C. Villa Abecia)', monto: 597784.29, cargo: 'Fiscal de obra', desde: '2019-02-12', hasta: '2019-09-04' },
-            { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Ampl. Sist. Alcantarillado Sanitario Escana (Yamparáez)', monto: 739381.5, cargo: 'Fiscal de obra', desde: '2019-02-02', hasta: '2019-08-20' },
-            { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Const. Sist. Agua Potable Chiri (Camataqui C. Villa Abecia)', monto: 675081.8, cargo: 'Fiscal de obra', desde: '2019-03-07', hasta: '2019-08-03' },
-            { id: uid(), entidad: 'Constructora y Consultora Acción Socio Ambiental CCOAS SRL', objeto: 'AJUSTE Y COMPLEMENTACIÓN DEL ESTUDIO A NIVEL EDTP CONSTRUCCIÓN PRESA Y RIEGO TECNIFICADO EN ATOSILLO', monto: 340000, cargo: 'Especialista en Diseño Hidráulico e Hidrológico', desde: '2019-07-01', hasta: '2019-10-19' },
-            { id: uid(), entidad: 'Asociación Accidental "E&M"', objeto: 'Supervisión técnica Construcción trasvase y planta potabilizadora para las zonas altas Sucre', monto: 520000, cargo: 'Especialista Hidráulico', desde: '2021-05-25', hasta: '2021-12-23' },
-            { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP MANEJO INTEGRAL DE LA MICROCUENCA TARACACHI MUNICIPIO DE ARQUE CBBA', monto: 990000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2021-12-27', hasta: '2022-04-26' },
-            { id: uid(), entidad: 'DESMA SRL', objeto: 'EDTP CONSTRUCCION REPRESA Y SISTEMA DE RIEGO QUEBRADA ONDA (CKOCHAS)', monto: 90000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2021-10-28', hasta: '2022-10-07' },
-            { id: uid(), entidad: 'ROES CONSULTORES Y ASOCIADOS', objeto: 'CONSTRUCCIÓN INTERCONEXIONES DE LA OBRA DE TOMA Y PTAP PARA EL SISTEMA DE AGUA POTABLE COBIJA', monto: 100000, cargo: 'Especialista Hidráulico e Hidrológico', desde: '2022-01-02', hasta: '2022-12-20' },
-            { id: uid(), entidad: 'F.P.S. Chuquisaca', objeto: 'Sup. Tec. Y Ambiental Const. Sistema de Riego Pedernal Monteagudo', monto: 50445314.59, cargo: 'Especialista Hidráulico', desde: '2020-05-15', hasta: '2023-06-08' },
-            { id: uid(), entidad: 'MINISTERIO DE MEDIO AMBIENTE Y AGUA UCP PAAP', objeto: 'CONSULTOR ESPECIALISTA HIDROLOGO PROYECTO CONCLUSIÓN PLANTA DE TRATAMIENTO DE AGUA POTABLE RIBERALTA', monto: 41000, cargo: 'Especialista Hidrólogo', desde: '2023-08-02', hasta: '2023-09-01' },
-            { id: uid(), entidad: 'Consultora AIPPA', objeto: 'Estudio Diseño Técnico de Preinversión Construcción Sistema de Riego Isluco (Ravelo)', monto: 250000, cargo: 'Especialista Hidráulico - Hidrólogo', desde: '2023-05-23', hasta: '2023-09-25' },
-            { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Supervisión Técnica Y Ambiental Construcción Sistema De Riego Pampas De Padilla Lote 2-A', monto: 13073203.72, cargo: 'Especialista Hidráulico - Hidrólogo', desde: '2022-02-25', hasta: '2024-03-29' },
-            { id: uid(), entidad: 'Asociación Accidental El Quebracho', objeto: 'Estudio de Diseño Técnico de Preinversión (EDTP) "Construcción Presa Rujero Grande"', monto: 1700232.7, cargo: 'Especialista en Hidrología e Hidráulica', desde: '2023-02-02', hasta: '2024-04-23' },
-            { id: uid(), entidad: 'Asociación Accidental del SUR', objeto: 'Servicio de Consultoría de Supervisión para el Proyecto Construcción Proyecto de riego Satoya', monto: 13428753.96, cargo: 'Especialista en Hidrología', desde: '2023-02-01', hasta: '2024-07-24' }
-        ];
-
-        // ============================================================
-        // STATE
+        // STATE - TODOS LOS DATOS VACÍOS PARA REGISTRO MANUAL
         // ============================================================
         const S = {
             view: 'dashboard',
@@ -834,7 +798,15 @@
             experiencia: [],
             formacion: [],
             cursos: [],
-            datosPersonales: {},
+            datosPersonales: {
+                nombre: '',
+                ci: '',
+                lugarExpedicion: '',
+                fechaNacimiento: '',
+                nacionalidad: '',
+                profesion: '',
+                registroProfesional: ''
+            },
             config: { ...DEFAULT_CONFIG },
             ganttYears: 10,
             user: null,
@@ -857,6 +829,7 @@
             trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>',
             copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
             excel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M8 12l3 3-3 3M14 12l-3 3 3 3"/></svg>',
+            upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16v-6m0 0-3 3m3-3 3 3M4 16v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg>',
             cv: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h6M8 16h4"/></svg>',
             empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>'
         };
@@ -1065,13 +1038,17 @@
                 if (cfg) S.config = { ...DEFAULT_CONFIG, ...JSON.parse(cfg) };
             } catch (e) {}
 
-            if (S.cotizaciones === null) { S.cotizaciones = seedCotizaciones(); await saveCotizaciones(userId); }
-            if (S.pagos === null) { S.pagos = seedPagos(); await savePagos(userId); }
-            if (S.clientes === null) { S.clientes = seedClientes(); await saveClientes(userId); }
-            if (S.experiencia === null) { S.experiencia = EXPERIENCIA_COMPLETA; await saveExperiencia(userId); }
-            if (S.formacion === null) { S.formacion = FORMACION_ACADEMICA; await saveFormacion(userId); }
-            if (S.cursos === null) { S.cursos = CURSOS_ESPECIALIZACION; await saveCursos(userId); }
-            if (S.datosPersonales === null) { S.datosPersonales = DATOS_PERSONALES; await saveDatosPersonales(userId); }
+            // Inicializar arrays vacíos si no existen
+            if (S.cotizaciones === null) { S.cotizaciones = []; await saveCotizaciones(userId); }
+            if (S.pagos === null) { S.pagos = []; await savePagos(userId); }
+            if (S.clientes === null) { S.clientes = []; await saveClientes(userId); }
+            if (S.experiencia === null) { S.experiencia = []; await saveExperiencia(userId); }
+            if (S.formacion === null) { S.formacion = []; await saveFormacion(userId); }
+            if (S.cursos === null) { S.cursos = []; await saveCursos(userId); }
+            if (S.datosPersonales === null) { 
+                S.datosPersonales = { nombre: '', ci: '', lugarExpedicion: '', fechaNacimiento: '', nacionalidad: '', profesion: '', registroProfesional: '' };
+                await saveDatosPersonales(userId); 
+            }
 
             if (S.config.logo) {
                 document.getElementById('brand-stamp').innerHTML = `<img src="${S.config.logo}" alt="logo">`;
@@ -1093,25 +1070,6 @@
             t.classList.add('show');
             clearTimeout(window.__tt);
             window.__tt = setTimeout(() => t.classList.remove('show'), 3000);
-        }
-
-        function seedCotizaciones() {
-            return [
-                { id: uid(), fecha: '2026-04-24', proyecto: 'REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'MODELACIÓN HIDRAULICA TUBERÍA OBRA DE TOMA Y DESFOGUE', items: [{ id: uid(), actividad: 'Modelación Hidráulica numérica tubería obra de toma y desfogue (WaterCAD)', pu: 250, unidad: 'Bs/escenario', cantidad: 8 }, { id: uid(), actividad: 'Informe Hidráulico', pu: 1000, unidad: 'Bs/informe', cantidad: 1 }], descuento: 500, plazoDias: 6, nota: DEFAULT_CONFIG.defaultNota, entregables: DEFAULT_CONFIG.defaultEntregables, estado: 'aceptada' },
-                { id: uid(), fecha: '2026-08-19', proyecto: 'SISTEMA DE RIEGO REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'INFORME HIDRAULICO DE REVISIÓN DE LA RED DE DISTRIBUCIÓN', items: [{ id: uid(), actividad: 'Revisión modelos WaterCAD de distribución', pu: 3500, unidad: '1 informe', cantidad: 1 }], descuento: 0, plazoDias: 6, nota: DEFAULT_CONFIG.defaultNota, entregables: 'en formato digital:\n- Informe Hidráulico de análisis de la red de distribución.', estado: 'enviada' },
-                { id: uid(), fecha: '2026-08-19', proyecto: 'REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', cliente: 'ROES CONSULTORES', titulo: 'DISEÑO DISIPADOR DE IMPACTO (DESFOGUE DE FONDO)', items: [{ id: uid(), actividad: 'Diseño y modelación hidráulica cámara disipadora de impacto', pu: 700, unidad: 'bs/estructura', cantidad: 1 }, { id: uid(), actividad: 'Informe técnico hidráulico', pu: 1000, unidad: 'bs/informe', cantidad: 1 }], descuento: 680, plazoDias: 5, nota: DEFAULT_CONFIG.defaultNota, entregables: 'en formato digital:\n- Informe técnico de la modelación hidráulica.', estado: 'aceptada' }
-            ];
-        }
-
-        function seedPagos() {
-            return [
-                { id: uid(), fecha: '2026-05-02', cliente: 'Proyecto Botaderos', descripcion: 'Hidrología — La Guardia', monto: 4500, montoPagado: 2250, fechaCompromiso: '2026-04-30', notas: '' },
-                { id: uid(), fecha: '2026-05-02', cliente: 'Proyecto Botaderos', descripcion: 'Hidrología — Poroma', monto: 4500, montoPagado: 2225, fechaCompromiso: '2026-04-30', notas: '' }
-            ];
-        }
-
-        function seedClientes() {
-            return [{ id: uid(), nombre: 'ROES CONSULTORES', proyectos: ['REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA', 'SISTEMA DE RIEGO REPRESA VACAS KUCHIJ CHIWALAKI - EMAGUA'] }];
         }
 
         // ============================================================
@@ -1164,6 +1122,7 @@
             const totalCobrado = pagos.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
             const totalPorCobrar = pagos.reduce((s, p) => s + Math.max(0, Number(p.monto) - Number(p.montoPagado || 0)), 0);
             const totalExperiencia = exp.reduce((s, e) => s + Number(e.monto || 0), 0);
+            const edad = calcularEdad(S.datosPersonales.fechaNacimiento);
 
             return `
             <div class="page-head">
@@ -1182,7 +1141,7 @@
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
                         <div><strong>Nombre:</strong> ${S.datosPersonales.nombre || '—'}</div>
                         <div><strong>CI:</strong> ${S.datosPersonales.ci || '—'}</div>
-                        <div><strong>Edad:</strong> ${S.datosPersonales.edad || '—'}</div>
+                        <div><strong>Edad:</strong> ${edad || '—'}</div>
                         <div><strong>Profesión:</strong> ${S.datosPersonales.profesion || '—'}</div>
                         <div><strong>RNI:</strong> ${S.datosPersonales.registroProfesional || '—'}</div>
                         <div><strong>Formación:</strong> ${S.formacion.length} títulos</div>
@@ -1323,12 +1282,14 @@
                 if (last > maxDate) maxDate = last;
             }
             const rangeMs = Math.max(1, maxDate.getTime() - minDate.getTime());
+            const edad = calcularEdad(S.datosPersonales.fechaNacimiento);
 
             return `
             <div class="page-head">
                 <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados con hoja de vida completa y diagrama de Gantt configurable.</p></div>
                 <div class="page-actions">
                     <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar hoja de vida</button>
+                    <button class="btn btn-primary" id="btn-import-excel">${ICONS.upload} Importar Excel</button>
                     <button class="btn btn-primary" id="btn-edit-cv">${ICONS.edit} Editar hoja de vida</button>
                     <button class="btn btn-primary" id="btn-new-exp">${ICONS.plus} Agregar proyecto</button>
                 </div>
@@ -1337,7 +1298,7 @@
             <!-- Hoja de vida editable -->
             <div class="panel" style="margin-bottom:20px;">
                 <div class="panel-h">
-                    <h3>📋 Hoja de vida — Editable</h3>
+                    <h3>📋 Hoja de vida — ${S.editingCV ? 'Editando' : 'Resumen'}</h3>
                     ${S.editingCV ? `<button class="btn btn-sm btn-success" id="btn-save-cv">💾 Guardar cambios</button>` : ''}
                 </div>
                 <div class="panel-body">
@@ -1347,7 +1308,8 @@
                             <div class="field"><label>Nombre completo</label><input id="cv-nombre" value="${attr(S.datosPersonales.nombre)}"></div>
                             <div class="field"><label>CI</label><input id="cv-ci" value="${attr(S.datosPersonales.ci)}"></div>
                             <div class="field"><label>Lugar expedición</label><input id="cv-lugar" value="${attr(S.datosPersonales.lugarExpedicion)}"></div>
-                            <div class="field"><label>Edad</label><input id="cv-edad" value="${attr(S.datosPersonales.edad)}"></div>
+                            <div class="field"><label>Fecha de nacimiento</label><input type="date" id="cv-fecha-nac" value="${attr(S.datosPersonales.fechaNacimiento)}" onchange="document.getElementById('cv-edad').value=calcularEdad(this.value)"></div>
+                            <div class="field"><label>Edad (calculada)</label><input id="cv-edad" value="${edad}" disabled style="background:#f5f5f5;"></div>
                             <div class="field"><label>Nacionalidad</label><input id="cv-nacionalidad" value="${attr(S.datosPersonales.nacionalidad)}"></div>
                             <div class="field"><label>Profesión</label><input id="cv-profesion" value="${attr(S.datosPersonales.profesion)}"></div>
                             <div class="field"><label>Registro profesional (RNI)</label><input id="cv-rni" value="${attr(S.datosPersonales.registroProfesional)}"></div>
@@ -1389,7 +1351,7 @@
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px;">
                             <div><strong>Nombre:</strong> ${S.datosPersonales.nombre || '—'}</div>
                             <div><strong>CI:</strong> ${S.datosPersonales.ci || '—'} (${S.datosPersonales.lugarExpedicion || '—'})</div>
-                            <div><strong>Edad:</strong> ${S.datosPersonales.edad || '—'}</div>
+                            <div><strong>Edad:</strong> ${edad || '—'}</div>
                             <div><strong>Nacionalidad:</strong> ${S.datosPersonales.nacionalidad || '—'}</div>
                             <div><strong>Profesión:</strong> ${S.datosPersonales.profesion || '—'}</div>
                             <div><strong>RNI:</strong> ${S.datosPersonales.registroProfesional || '—'}</div>
@@ -1454,7 +1416,9 @@
 
             <!-- Tabla de experiencia -->
             <div class="panel">
-                <div class="panel-h"><h3>Lista completa de proyectos (${rows.length})</h3></div>
+                <div class="panel-h">
+                    <h3>Lista completa de proyectos (${rows.length})</h3>
+                </div>
                 <div class="panel-body">
                     ${rows.length ? `<div class="table-wrap"><table>
                         <thead><tr><th>#</th><th>Entidad / Empresa</th><th>Objeto</th><th class="tright">Monto</th><th>Cargo</th><th>Desde</th><th>Hasta</th><th></th></tr></thead>
@@ -1625,7 +1589,7 @@
                 }
             });
 
-            overlay.querySelector('input, textarea, select').addEventListener('input', recalc);
+            overlay.querySelectorAll('input, textarea, select').forEach(el => el.addEventListener('input', recalc));
             overlay.querySelector('#f-descuento').addEventListener('input', recalc);
 
             const closeModal = () => {
@@ -1947,14 +1911,221 @@
         }
 
         // ============================================================
-        // EXPORTAR HOJA DE VIDA CON FORMATO PROFESIONAL
+        // IMPORTAR EXPERIENCIA DESDE EXCEL
+        // ============================================================
+        function openImportModal() {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:700px;">
+                    <div class="modal-h">
+                        <h3>📥 Importar experiencia desde Excel</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <label>Formato esperado</label>
+                            <div style="background:var(--gantt-bg);padding:12px;border-radius:var(--radius);font-size:12px;font-family:monospace;">
+                                <strong>Columnas requeridas:</strong><br>
+                                Entidad | Objeto | Monto | Cargo | Desde | Hasta<br>
+                                <span style="color:var(--text-soft);">(Las fechas en formato YYYY-MM-DD o DD/MM/YYYY)</span>
+                            </div>
+                        </div>
+                        <div class="file-upload-area" id="file-drop-area">
+                            <div class="icon">📂</div>
+                            <div class="text">Arrastra un archivo Excel (.xlsx, .xls) o haz clic para seleccionar</div>
+                            <div class="sub">Soporta archivos .xlsx y .xls</div>
+                            <input type="file" id="file-input" accept=".xlsx,.xls">
+                        </div>
+                        <div id="import-preview" style="display:none;margin-top:12px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                <span id="import-count" style="font-weight:600;"></span>
+                                <span style="font-size:12px;color:var(--text-soft);" id="import-status"></span>
+                            </div>
+                            <div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);" id="import-table-container"></div>
+                        </div>
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-success" id="btn-import-confirm" disabled>✅ Importar datos</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            let importedData = [];
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) overlay.remove();
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            // Drag and drop
+            const dropArea = overlay.querySelector('#file-drop-area');
+            const fileInput = overlay.querySelector('#file-input');
+
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.style.borderColor = 'var(--primary)';
+                dropArea.style.background = 'var(--surface-hover)';
+            });
+
+            dropArea.addEventListener('dragleave', () => {
+                dropArea.style.borderColor = 'var(--border)';
+                dropArea.style.background = 'transparent';
+            });
+
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.style.borderColor = 'var(--border)';
+                dropArea.style.background = 'transparent';
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(fileInput.files[0]);
+                }
+            });
+
+            dropArea.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            function handleFile(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                        // Mapear columnas
+                        const headers = Object.keys(jsonData[0] || {});
+                        const mapCol = (posible) => {
+                            for (const h of headers) {
+                                if (h.toLowerCase().includes(posible.toLowerCase())) return h;
+                            }
+                            return null;
+                        };
+
+                        importedData = jsonData.map(row => {
+                            const entidad = row[mapCol('entidad')] || row[mapCol('empresa')] || '';
+                            const objeto = row[mapCol('objeto')] || row[mapCol('proyecto')] || '';
+                            const monto = parseFloat(String(row[mapCol('monto')] || '0').replace(/,/g, '')) || 0;
+                            const cargo = row[mapCol('cargo')] || '';
+                            let desde = row[mapCol('desde')] || '';
+                            let hasta = row[mapCol('hasta')] || '';
+
+                            // Intentar parsear fechas
+                            if (desde) {
+                                try {
+                                    const d = new Date(desde);
+                                    if (!isNaN(d)) desde = d.toISOString().slice(0, 10);
+                                } catch (e) {}
+                            }
+                            if (hasta) {
+                                try {
+                                    const d = new Date(hasta);
+                                    if (!isNaN(d)) hasta = d.toISOString().slice(0, 10);
+                                } catch (e) {}
+                            }
+
+                            return { entidad: String(entidad).trim(), objeto: String(objeto).trim(), monto, cargo: String(cargo).trim(), desde, hasta };
+                        }).filter(row => row.entidad || row.objeto);
+
+                        mostrarPreview(importedData);
+                        overlay.querySelector('#btn-import-confirm').disabled = importedData.length === 0;
+                    } catch (err) {
+                        toast('❌ Error al leer el archivo: ' + err.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            function mostrarPreview(data) {
+                const container = overlay.querySelector('#import-preview');
+                const tableContainer = overlay.querySelector('#import-table-container');
+                const countSpan = overlay.querySelector('#import-count');
+                const statusSpan = overlay.querySelector('#import-status');
+
+                container.style.display = 'block';
+                countSpan.textContent = `📊 ${data.length} registros encontrados`;
+
+                if (data.length === 0) {
+                    tableContainer.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-soft);">No se encontraron datos válidos.</div>';
+                    statusSpan.textContent = '⚠️ Sin datos válidos';
+                    return;
+                }
+
+                let html = '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
+                html += '<thead><tr style="background:var(--primary);color:#fff;">';
+                html += '<th style="padding:6px 8px;text-align:left;">Entidad</th>';
+                html += '<th style="padding:6px 8px;text-align:left;">Objeto</th>';
+                html += '<th style="padding:6px 8px;text-align:right;">Monto</th>';
+                html += '<th style="padding:6px 8px;text-align:left;">Cargo</th>';
+                html += '<th style="padding:6px 8px;text-align:left;">Desde</th>';
+                html += '<th style="padding:6px 8px;text-align:left;">Hasta</th>';
+                html += '</tr></thead><tbody>';
+
+                data.slice(0, 50).forEach(row => {
+                    html += `<tr style="border-bottom:1px solid var(--border);">`;
+                    html += `<td style="padding:4px 8px;">${esc(row.entidad || '—')}</td>`;
+                    html += `<td style="padding:4px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(row.objeto || '—')}</td>`;
+                    html += `<td style="padding:4px 8px;text-align:right;">${row.monto ? bs(row.monto) : '—'}</td>`;
+                    html += `<td style="padding:4px 8px;">${esc(row.cargo || '—')}</td>`;
+                    html += `<td style="padding:4px 8px;">${row.desde ? fmtDate(row.desde) : '—'}</td>`;
+                    html += `<td style="padding:4px 8px;">${row.hasta ? fmtDate(row.hasta) : '—'}</td>`;
+                    html += '</tr>';
+                });
+
+                if (data.length > 50) {
+                    html += `<tr><td colspan="6" style="padding:8px;text-align:center;color:var(--text-soft);">...y ${data.length - 50} registros más</td></tr>`;
+                }
+
+                html += '</tbody></table>';
+                tableContainer.innerHTML = html;
+                statusSpan.textContent = `✅ ${data.length} registros listos para importar`;
+            }
+
+            overlay.querySelector('#btn-import-confirm').onclick = async () => {
+                if (importedData.length === 0) {
+                    toast('No hay datos para importar.');
+                    return;
+                }
+
+                // Validar y preparar datos
+                const nuevos = importedData.map(row => ({
+                    id: uid(),
+                    entidad: row.entidad || 'Sin entidad',
+                    objeto: row.objeto || 'Sin descripción',
+                    monto: row.monto || 0,
+                    cargo: row.cargo || 'Sin cargo',
+                    desde: row.desde || new Date().toISOString().slice(0, 10),
+                    hasta: row.hasta || new Date().toISOString().slice(0, 10)
+                }));
+
+                const totalActual = S.experiencia.length;
+                S.experiencia = [...S.experiencia, ...nuevos];
+                await saveExperiencia(S.user?.uid);
+                
+                closeModal();
+                render();
+                toast(`✅ ${nuevos.length} proyectos importados exitosamente. Total: ${S.experiencia.length} proyectos.`);
+            };
+        }
+
+        // ============================================================
+        // EXPORTAR HOJA DE VIDA
         // ============================================================
         function exportHojaVida() {
             try {
                 const wb = XLSX.utils.book_new();
-                
-                // Estilos básicos para el Excel (no todos los navegadores soportan estilos avanzados)
-                // Usamos un formato limpio y profesional
                 
                 // Hoja 1: Datos Personales
                 const dpData = [
@@ -1965,7 +2136,8 @@
                     ['Nombre Completo', S.datosPersonales.nombre || ''],
                     ['Cédula de Identidad', S.datosPersonales.ci || ''],
                     ['Lugar de Expedición', S.datosPersonales.lugarExpedicion || ''],
-                    ['Edad', S.datosPersonales.edad || ''],
+                    ['Fecha de Nacimiento', S.datosPersonales.fechaNacimiento ? fmtDateExcel(S.datosPersonales.fechaNacimiento) : ''],
+                    ['Edad', calcularEdad(S.datosPersonales.fechaNacimiento) || ''],
                     ['Nacionalidad', S.datosPersonales.nacionalidad || ''],
                     ['Profesión', S.datosPersonales.profesion || ''],
                     ['Número de Registro Profesional', S.datosPersonales.registroProfesional || '']
@@ -1978,13 +2150,13 @@
                 const faData = [
                     ['2. FORMACIÓN ACADÉMICA'],
                     [''],
-                    ['Universidad / Institución', 'Desde', 'Hasta', 'Grado Académico', 'Título en Provisión Nacional']
+                    ['Universidad / Institución', 'Desde', 'Hasta', 'Grado Académico']
                 ];
                 S.formacion.forEach(f => {
-                    faData.push([f.institucion, fmtDateExcel(f.desde), fmtDateExcel(f.hasta), f.grado, fmtDateExcel(f.titulo)]);
+                    faData.push([f.institucion, fmtDateExcel(f.desde), fmtDateExcel(f.hasta), f.grado]);
                 });
                 const ws2 = XLSX.utils.aoa_to_sheet(faData);
-                ws2['!cols'] = [{ wch: 50 }, { wch: 16 }, { wch: 16 }, { wch: 55 }, { wch: 22 }];
+                ws2['!cols'] = [{ wch: 50 }, { wch: 16 }, { wch: 16 }, { wch: 55 }];
                 XLSX.utils.book_append_sheet(wb, ws2, 'Formación Académica');
 
                 // Hoja 3: Cursos de Especialización
@@ -2014,11 +2186,9 @@
                 ws4['!cols'] = [{ wch: 6 }, { wch: 34 }, { wch: 55 }, { wch: 18 }, { wch: 34 }, { wch: 16 }, { wch: 16 }];
                 XLSX.utils.book_append_sheet(wb, ws4, 'Experiencia');
 
-                // Establecer estilos de celda para las cabeceras (en la medida de lo posible)
-                // Nota: XLSX.js no soporta estilos completos, pero podemos usar formato de número
                 const fileName = `Hoja_Vida_Ing_Antequera_${new Date().toISOString().slice(0,10)}.xlsx`;
                 XLSX.writeFile(wb, fileName);
-                toast('✅ Hoja de vida exportada a Excel con formato profesional.');
+                toast('✅ Hoja de vida exportada a Excel con todas las secciones.');
             } catch (e) {
                 console.error(e);
                 toast('Error al exportar: ' + e.message);
@@ -2026,7 +2196,7 @@
         }
 
         // ============================================================
-        // PDF EXPORT - COMPLETO
+        // PDF EXPORT
         // ============================================================
         function exportPDF(c) {
             if (!c) { toast('No se encontró la cotización.'); return; }
@@ -2035,35 +2205,30 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'mm', format: 'a4' });
             const pageW = doc.internal.pageSize.getWidth();
-            const primary = [26, 74, 92]; // #1A4A5C
+            const primary = [26, 74, 92];
             let y = 18;
 
-            // Logo
             if (S.config.logo) {
                 try { doc.addImage(S.config.logo, 'PNG', 15, 10, 16, 16); } catch (e) {}
             }
 
-            // Título
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
             doc.setTextColor(...primary);
             doc.text('COTIZACIÓN', pageW / 2, y, { align: 'center' });
             y += 8;
 
-            // Título del trabajo
             doc.setFontSize(12);
             doc.setTextColor(30, 36, 41);
             const titleLines = doc.splitTextToSize(c.titulo || '', 170);
             doc.text(titleLines, pageW / 2, y, { align: 'center' });
             y += titleLines.length * 6 + 4;
 
-            // Línea separadora
             doc.setDrawColor(...primary);
             doc.setLineWidth(0.5);
             doc.line(15, y, pageW - 15, y);
             y += 8;
 
-            // Datos del proyecto
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.text('Proyecto:', 15, y);
@@ -2078,7 +2243,6 @@
             doc.text(c.cliente || '—', 38, y);
             y += 8;
 
-            // Tabla de items
             doc.autoTable({
                 startY: y,
                 head: [['Nº', 'Actividad', 'P.U. [Bs]', 'Unidad', 'Cant.', 'Total [Bs]']],
@@ -2105,7 +2269,6 @@
             });
             y = doc.lastAutoTable.finalY + 8;
 
-            // Totales
             const subtotal = cotSubtotal(c);
             const total = cotTotal(c);
             doc.setFontSize(10);
@@ -2123,14 +2286,12 @@
             doc.text(`Monto final [Bs]: ${total.toFixed(2)}`, pageW - 15, y, { align: 'right' });
             y += 10;
 
-            // Plazo
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
             doc.setTextColor(30, 36, 41);
             doc.text(`Plazo a partir del anticipo: ${c.plazoDias||0} días`, 15, y);
             y += 10;
 
-            // Entregables
             if (c.entregables) {
                 if (y > 245) { doc.addPage(); y = 20; }
                 doc.setFont('helvetica', 'bold');
@@ -2146,7 +2307,6 @@
                 y += delLines.length * 4 + 6;
             }
 
-            // Nota
             if (c.nota) {
                 if (y > 255) { doc.addPage(); y = 20; }
                 doc.setFontSize(8);
@@ -2156,7 +2316,6 @@
                 y += noteLines.length * 4 + 10;
             }
 
-            // Firma
             if (y > 255) { doc.addPage(); y = 20; }
             doc.setFontSize(9);
             doc.setTextColor(30, 36, 41);
@@ -2169,7 +2328,6 @@
             doc.setFontSize(8);
             doc.text(S.config.rni || '', 15, y);
 
-            // Guardar
             const safeName = (c.proyecto || 'cotizacion').replace(/[^a-z0-9]+/gi, '_').slice(0, 40);
             doc.save(`Cotizacion_${safeName}_${c.fecha}.pdf`);
             toast('📄 PDF generado correctamente.');
@@ -2305,11 +2463,10 @@
             const btnSaveCV = document.getElementById('btn-save-cv');
             if (btnSaveCV) {
                 btnSaveCV.onclick = async () => {
-                    // Guardar datos personales
                     S.datosPersonales.nombre = document.getElementById('cv-nombre').value.trim();
                     S.datosPersonales.ci = document.getElementById('cv-ci').value.trim();
                     S.datosPersonales.lugarExpedicion = document.getElementById('cv-lugar').value.trim();
-                    S.datosPersonales.edad = document.getElementById('cv-edad').value.trim();
+                    S.datosPersonales.fechaNacimiento = document.getElementById('cv-fecha-nac').value;
                     S.datosPersonales.nacionalidad = document.getElementById('cv-nacionalidad').value.trim();
                     S.datosPersonales.profesion = document.getElementById('cv-profesion').value.trim();
                     S.datosPersonales.registroProfesional = document.getElementById('cv-rni').value.trim();
@@ -2356,12 +2513,10 @@
             if (btnAddFormacion) {
                 btnAddFormacion.onclick = () => {
                     const container = document.getElementById('cv-formacion-container');
-                    const idx = container.children.length;
                     const div = document.createElement('div');
                     div.className = 'row4';
                     div.style.marginBottom = '8px';
                     div.style.alignItems = 'center';
-                    div.dataset.fIdx = idx;
                     div.innerHTML = `
                         <input placeholder="Institución" class="cv-f-institucion">
                         <input type="date" class="cv-f-desde">
@@ -2398,12 +2553,10 @@
             if (btnAddCurso) {
                 btnAddCurso.onclick = () => {
                     const container = document.getElementById('cv-cursos-container');
-                    const idx = container.children.length;
                     const div = document.createElement('div');
                     div.className = 'row4';
                     div.style.marginBottom = '8px';
                     div.style.alignItems = 'center';
-                    div.dataset.cIdx = idx;
                     div.innerHTML = `
                         <input placeholder="Institución" class="cv-c-institucion">
                         <input type="date" class="cv-c-desde">
@@ -2414,6 +2567,12 @@
                     `;
                     container.appendChild(div);
                 };
+            }
+
+            // Importar Excel
+            const btnImport = document.getElementById('btn-import-excel');
+            if (btnImport) {
+                btnImport.onclick = openImportModal;
             }
 
             // Cotizaciones
