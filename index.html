@@ -449,7 +449,8 @@
         .stamp.parcial { color: var(--accent); background: #F5ECD9; }
         .stamp.pagado { color: var(--success); background: #E8F5ED; }
         .stamp.en-curso { color: var(--accent); background: #F5ECD9; border-style: dashed; }
-
+        .stamp.certificado { color: var(--success); background: #E8F5ED; border-color: var(--success); }
+        
         .empty { padding: 40px 20px; text-align: center; color: var(--text-soft); }
         .empty svg { width: 40px; height: 40px; opacity: 0.3; margin-bottom: 12px; }
 
@@ -2104,7 +2105,7 @@
                                     <td style="font-size:12px;">${esc(e.cargo)}</td>
                                     <td class="tnum" style="white-space:nowrap;">${fmtDate(e.desde)}</td>
                                     <td class="tnum" style="white-space:nowrap;">${e.enCurso ? 'En curso' : fmtDate(e.hasta)}</td>
-                                    <td><span class="stamp ${e.enCurso ? 'en-curso' : ''}">${e.enCurso ? 'En curso' : (e.certificado ? 'Certificado' : 'Sin certificado')}</span></td>
+                                    <td><span class="stamp ${e.enCurso ? 'en-curso' : (e.certificado ? 'certificado' : 'pendiente')}">${e.enCurso ? 'En curso' : (e.certificado ? 'Certificado' : 'Sin certificado')}</span></td>
                                     <td>
                                         <div class="rowactions">
                                             <button class="iconbtn" title="Editar" data-edit-exp="${e.id}">${ICONS.edit}</button>
