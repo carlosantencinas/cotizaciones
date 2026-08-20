@@ -197,6 +197,8 @@
         .btn-sm { padding: 6px 12px; font-size: 12px; }
         .btn-success { background: #27AE60; color: #fff; }
         .btn-success:hover { background: #219A52; }
+        .btn-warning { background: var(--accent); color: #fff; }
+        .btn-warning:hover { background: var(--accent-light); }
 
         .login-container {
             display: flex;
@@ -331,7 +333,17 @@
             padding: 10px 14px;
             border-bottom: 1.5px solid var(--border);
             font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
         }
+        th:hover { background: var(--surface-hover); }
+        th .sort-icon {
+            font-size: 10px;
+            margin-left: 4px;
+            opacity: 0.5;
+        }
+        th.active .sort-icon { opacity: 1; }
         td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         tbody tr:hover { background: var(--surface-hover); }
@@ -483,6 +495,43 @@
             box-shadow: 0 0 0 3px rgba(26,74,92,0.1);
         }
 
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            padding: 12px 16px;
+            background: var(--gantt-bg);
+            border-radius: var(--radius);
+            align-items: center;
+        }
+        .filter-bar label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-soft);
+        }
+        .filter-bar input, .filter-bar select {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            background: #fff;
+        }
+        .filter-bar input:focus, .filter-bar select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26,74,92,0.1);
+        }
+        .filter-bar .filter-clear {
+            margin-left: auto;
+            font-size: 12px;
+            color: var(--text-soft);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .filter-bar .filter-clear:hover { color: var(--danger); }
+
         .overlay {
             position: fixed;
             inset: 0;
@@ -498,7 +547,7 @@
         .modal {
             background: var(--surface);
             border-radius: var(--radius);
-            max-width: 780px;
+            max-width: 820px;
             width: 100%;
             box-shadow: var(--shadow-lg);
             border: 1px solid var(--border);
@@ -551,8 +600,7 @@
         .field textarea { resize: vertical; min-height: 60px; }
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-        .row4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
-        .row5 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 10px; }
+        .row4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
 
         .cv-edit-grid {
             display: grid;
@@ -571,6 +619,22 @@
             padding-bottom: 4px;
             border-bottom: 2px solid var(--border);
         }
+
+        .payment-history {
+            font-size: 12px;
+            background: var(--gantt-bg);
+            border-radius: var(--radius);
+            padding: 8px 12px;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+        .payment-history .entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .payment-history .entry:last-child { border-bottom: none; }
 
         #toast {
             position: fixed;
@@ -628,11 +692,13 @@
             .nav-foot { display: none; }
             .nav-user { display: none; }
             main { padding: 20px 16px; }
-            .row2, .row3, .row4, .row5 { grid-template-columns: 1fr; }
+            .row2, .row3, .row4 { grid-template-columns: 1fr; }
             .cv-edit-grid { grid-template-columns: 1fr; }
             .gantt-label { width: 100px; font-size: 11px; }
             .page-head { flex-direction: column; }
             .login-box { padding: 28px 20px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar .filter-clear { margin-left: 0; text-align: right; }
         }
         @media (max-width: 480px) {
             .kpi-grid { grid-template-columns: 1fr 1fr; }
@@ -712,7 +778,7 @@
                 <div class="email" id="user-email">usuario@email.com</div>
                 <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
             </div>
-            <div class="nav-foot mono">RNI 28.106 · v2.4</div>
+            <div class="nav-foot mono">RNI 28.106 · v2.6</div>
         </aside>
         <main id="main"></main>
     </div>
@@ -788,7 +854,7 @@
         };
 
         // ============================================================
-        // STATE - TODOS LOS DATOS VACÍOS PARA REGISTRO MANUAL
+        // STATE
         // ============================================================
         const S = {
             view: 'dashboard',
@@ -810,7 +876,9 @@
             config: { ...DEFAULT_CONFIG },
             ganttYears: 10,
             user: null,
-            editingCV: false
+            editingCV: false,
+            filters: { entidad: '', objeto: '', cargo: '', desde: '', hasta: '' },
+            sort: { column: null, direction: 'asc' }
         };
 
         // ============================================================
@@ -1038,7 +1106,6 @@
                 if (cfg) S.config = { ...DEFAULT_CONFIG, ...JSON.parse(cfg) };
             } catch (e) {}
 
-            // Inicializar arrays vacíos si no existen
             if (S.cotizaciones === null) { S.cotizaciones = []; await saveCotizaciones(userId); }
             if (S.pagos === null) { S.pagos = []; await savePagos(userId); }
             if (S.clientes === null) { S.clientes = []; await saveClientes(userId); }
@@ -1080,6 +1147,63 @@
         function pagoEstado(p) { const pend = Number(p.monto) - Number(p.montoPagado || 0); if (pend <= 0.001) return 'pagado'; if (Number(p.montoPagado || 0) > 0) return 'parcial'; return 'pendiente'; }
 
         // ============================================================
+        // FUNCIONES DE FILTRO Y ORDENAMIENTO
+        // ============================================================
+        function applyFiltersAndSort(data) {
+            let result = [...data];
+            
+            if (S.filters.entidad) {
+                result = result.filter(e => e.entidad.toLowerCase().includes(S.filters.entidad.toLowerCase()));
+            }
+            if (S.filters.objeto) {
+                result = result.filter(e => e.objeto.toLowerCase().includes(S.filters.objeto.toLowerCase()));
+            }
+            if (S.filters.cargo) {
+                result = result.filter(e => e.cargo.toLowerCase().includes(S.filters.cargo.toLowerCase()));
+            }
+            if (S.filters.desde) {
+                result = result.filter(e => e.desde >= S.filters.desde);
+            }
+            if (S.filters.hasta) {
+                result = result.filter(e => e.hasta <= S.filters.hasta);
+            }
+            
+            if (S.sort.column) {
+                result.sort((a, b) => {
+                    let valA = a[S.sort.column] || '';
+                    let valB = b[S.sort.column] || '';
+                    
+                    if (S.sort.column === 'monto') {
+                        valA = Number(valA) || 0;
+                        valB = Number(valB) || 0;
+                    }
+                    
+                    if (valA < valB) return S.sort.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return S.sort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            
+            return result;
+        }
+
+        function toggleSort(column) {
+            if (S.sort.column === column) {
+                S.sort.direction = S.sort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                S.sort.column = column;
+                S.sort.direction = 'asc';
+            }
+            render();
+        }
+
+        function clearFilters() {
+            S.filters = { entidad: '', objeto: '', cargo: '', desde: '', hasta: '' };
+            S.sort = { column: null, direction: 'asc' };
+            render();
+        }
+
+        // ============================================================
         // RENDER
         // ============================================================
         function render() {
@@ -1110,7 +1234,7 @@
         }
 
         // ============================================================
-        // VIEWS
+        // VIEW DASHBOARD - CON AVANCE DE PAGOS
         // ============================================================
         function viewDashboard() {
             const cots = S.cotizaciones;
@@ -1124,17 +1248,72 @@
             const totalExperiencia = exp.reduce((s, e) => s + Number(e.monto || 0), 0);
             const edad = calcularEdad(S.datosPersonales.fechaNacimiento);
 
+            // Calcular avance de pagos por cotización aceptada
+            const cotizacionesAceptadas = cots.filter(c => c.estado === 'aceptada');
+            const avancePagos = cotizacionesAceptadas.map(c => {
+                const montoTotal = cotTotal(c);
+                const pagosRelacionados = pagos.filter(p => p.cotizacionId === c.id);
+                const totalPagado = pagosRelacionados.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
+                const porcentaje = montoTotal > 0 ? (totalPagado / montoTotal) * 100 : 0;
+                return {
+                    ...c,
+                    montoTotal,
+                    totalPagado,
+                    porcentaje: Math.min(100, porcentaje),
+                    pagos: pagosRelacionados
+                };
+            });
+
             return `
             <div class="page-head">
                 <div><p class="eyebrow">Panel general</p><h1>Dashboard</h1><p>Resumen de cotizaciones, cobros y experiencia profesional.</p></div>
             </div>
             <div class="kpi-grid">
                 <div class="kpi"><div class="label">Total cotizado</div><div class="val">${bs(totalCotizado)}</div><div class="sub">${cots.length} cotizaciones</div></div>
-                <div class="kpi success"><div class="label">Total aceptado</div><div class="val">${bs(totalAceptado)}</div><div class="sub">${cots.filter(c=>c.estado==='aceptada').length} aceptadas</div></div>
+                <div class="kpi success"><div class="label">Total aceptado</div><div class="val">${bs(totalAceptado)}</div><div class="sub">${cotizacionesAceptadas.length} aceptadas</div></div>
                 <div class="kpi accent"><div class="label">Cobrado a la fecha</div><div class="val">${bs(totalCobrado)}</div><div class="sub">${pagos.length} registros</div></div>
                 <div class="kpi danger"><div class="label">Por cobrar</div><div class="val">${bs(totalPorCobrar)}</div><div class="sub">${pagos.filter(p=>pagoEstado(p)!=='pagado').length} pendientes</div></div>
                 <div class="kpi"><div class="label">Experiencia total</div><div class="val">${bs(totalExperiencia)}</div><div class="sub">${exp.length} proyectos</div></div>
             </div>
+
+            <!-- Avance de pagos de cotizaciones aceptadas -->
+            <div class="panel">
+                <div class="panel-h"><h3>💰 Avance de pagos - Cotizaciones aceptadas</h3></div>
+                <div class="panel-body">
+                    ${avancePagos.length ? avancePagos.map(item => `
+                        <div style="margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                                <div>
+                                    <div style="font-weight:600;font-size:14px;">${esc(item.titulo)}</div>
+                                    <div style="font-size:12px;color:var(--text-soft);">${esc(item.cliente)} - ${esc(item.proyecto)}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-weight:600;font-size:14px;">${bs(item.totalPagado)} / ${bs(item.montoTotal)}</div>
+                                    <div style="font-size:12px;color:var(--text-soft);">${item.porcentaje.toFixed(1)}% pagado</div>
+                                </div>
+                            </div>
+                            <div style="margin-top:8px;height:8px;background:var(--gantt-bg);border-radius:4px;overflow:hidden;">
+                                <div style="height:100%;border-radius:4px;background:${item.porcentaje >= 100 ? 'var(--gantt-active)' : 'var(--accent)'};width:${item.porcentaje}%;transition:width 0.5s ease;"></div>
+                            </div>
+                            ${item.pagos.length ? `
+                                <div class="payment-history" style="margin-top:8px;">
+                                    ${item.pagos.map(p => `
+                                        <div class="entry">
+                                            <span>${fmtDate(p.fecha)} - ${esc(p.descripcion)}</span>
+                                            <span style="font-weight:500;">${bs(p.montoPagado)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `<div style="font-size:12px;color:var(--text-soft);margin-top:6px;">Sin pagos registrados aún</div>`}
+                            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                                <button class="btn btn-sm btn-success" onclick="openPagoFromCotizacion('${item.id}')">+ Registrar pago</button>
+                                <button class="btn btn-sm btn-ghost" onclick="S.view='pagos';render();">Ver todos los pagos</button>
+                            </div>
+                        </div>
+                    `).join('') : `<div class="empty">${ICONS.empty}<div>No hay cotizaciones aceptadas aún.</div></div>`}
+                </div>
+            </div>
+
             <div class="panel">
                 <div class="panel-h"><h3>📋 Resumen de hoja de vida</h3></div>
                 <div class="panel-body">
@@ -1152,6 +1331,9 @@
             </div>`;
         }
 
+        // ============================================================
+        // VIEW COTIZACIONES
+        // ============================================================
         function viewCotizaciones() {
             const rows = [...S.cotizaciones].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
             return `
@@ -1165,8 +1347,10 @@
                 ${rows.length ? `<div class="table-wrap"><table>
                     <thead><tr><th>Fecha</th><th>Proyecto / Título</th><th>Cliente</th><th class="tright">Total</th><th>Estado</th><th></th></tr></thead>
                     <tbody>
-                        ${rows.map(c => `
-                            <tr>
+                        ${rows.map(c => {
+                            const pagosRel = S.pagos.filter(p => p.cotizacionId === c.id);
+                            const totalPagado = pagosRel.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
+                            return `<tr>
                                 <td class="tnum" style="white-space:nowrap;">${fmtDate(c.fecha)}</td>
                                 <td><div style="font-weight:600;font-size:13px;">${esc(c.titulo)}</div><div style="font-size:11.5px;color:var(--text-soft);">${esc(c.proyecto)}</div></td>
                                 <td>${esc(c.cliente)}</td>
@@ -1178,14 +1362,19 @@
                                         <button class="iconbtn" title="Editar" data-edit-cot="${c.id}">${ICONS.edit}</button>
                                         <button class="iconbtn" title="Duplicar" data-dup-cot="${c.id}">${ICONS.copy}</button>
                                         <button class="iconbtn" title="Eliminar" data-del-cot="${c.id}">${ICONS.trash}</button>
+                                        ${c.estado === 'aceptada' ? `<button class="iconbtn" title="Registrar pago" onclick="openPagoFromCotizacion('${c.id}')">💰</button>` : ''}
                                     </div>
                                 </td>
-                            </tr>`).join('')}
+                            </tr>`;
+                        }).join('')}
                     </tbody>
                 </table></div>` : `<div class="empty">${ICONS.empty}<div>Aún no registras cotizaciones.</div></div>`}
             </div>`;
         }
 
+        // ============================================================
+        // VIEW PAGOS
+        // ============================================================
         function viewPagos() {
             const rows = [...S.pagos].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
             return `
@@ -1199,13 +1388,13 @@
                 ${rows.length ? `<div class="table-wrap"><table>
                     <thead>
                         <tr>
-                            <th>Fecha registro</th>
+                            <th>Fecha</th>
                             <th>Descripción</th>
                             <th>Cliente</th>
-                            <th class="tright">Monto total</th>
-                            <th class="tright">Monto pagado</th>
+                            <th>Cotización</th>
+                            <th class="tright">Monto</th>
+                            <th class="tright">Pagado</th>
                             <th class="tright">Saldo</th>
-                            <th>Fecha compromiso</th>
                             <th>Estado</th>
                             <th></th>
                         </tr>
@@ -1213,18 +1402,19 @@
                     <tbody>
                         ${rows.map(p => {
                             const saldo = Number(p.monto) - Number(p.montoPagado || 0);
+                            const cot = S.cotizaciones.find(c => c.id === p.cotizacionId);
                             return `<tr>
                                 <td class="tnum" style="white-space:nowrap;">${fmtDate(p.fecha)}</td>
                                 <td style="font-weight:500;">${esc(p.descripcion||'—')}</td>
                                 <td>${esc(p.cliente||'—')}</td>
+                                <td>${cot ? esc(cot.titulo) : '—'}</td>
                                 <td class="tright tnum">${bs(p.monto)}</td>
                                 <td class="tright tnum">${bs(p.montoPagado||0)}</td>
                                 <td class="tright tnum" style="font-weight:600;">${bs(saldo)}</td>
-                                <td class="tnum" style="white-space:nowrap;">${p.fechaCompromiso ? fmtDate(p.fechaCompromiso) : '—'}</td>
                                 <td><span class="stamp ${pagoEstado(p)}">${pagoEstado(p)}</span></td>
                                 <td>
                                     <div class="rowactions">
-                                        <button class="iconbtn" title="Registrar pago" data-register-pago="${p.id}">💰</button>
+                                        <button class="iconbtn" title="Registrar pago parcial" data-register-pago="${p.id}">💰</button>
                                         <button class="iconbtn" title="Editar" data-edit-pago="${p.id}">${ICONS.edit}</button>
                                         <button class="iconbtn" title="Eliminar" data-del-pago="${p.id}">${ICONS.trash}</button>
                                     </div>
@@ -1236,6 +1426,9 @@
             </div>`;
         }
 
+        // ============================================================
+        // VIEW CLIENTES
+        // ============================================================
         function viewClientes() {
             const list = [...S.clientes].sort((a, b) => a.nombre.localeCompare(b.nombre));
             return `
@@ -1264,8 +1457,12 @@
             </div></div>`;
         }
 
+        // ============================================================
+        // VIEW EXPERIENCIA
+        // ============================================================
         function viewExperiencia() {
-            const rows = [...S.experiencia].sort((a, b) => (b.desde || '').localeCompare(a.desde || ''));
+            const rows = applyFiltersAndSort(S.experiencia);
+            const allRows = S.experiencia;
             const now = new Date();
             const ganttYears = S.ganttYears || 10;
             const startDate = new Date(now);
@@ -1283,6 +1480,9 @@
             }
             const rangeMs = Math.max(1, maxDate.getTime() - minDate.getTime());
             const edad = calcularEdad(S.datosPersonales.fechaNacimiento);
+            
+            const entidades = [...new Set(allRows.map(e => e.entidad).filter(Boolean))].sort();
+            const cargos = [...new Set(allRows.map(e => e.cargo).filter(Boolean))].sort();
 
             return `
             <div class="page-head">
@@ -1414,18 +1614,55 @@
                 </div>
             </div>
 
-            <!-- Tabla de experiencia -->
+            <!-- Tabla de experiencia con filtros -->
             <div class="panel">
                 <div class="panel-h">
-                    <h3>Lista completa de proyectos (${rows.length})</h3>
+                    <h3>Lista de proyectos (${rows.length} de ${allRows.length} totales)</h3>
                 </div>
                 <div class="panel-body">
+                    <div class="filter-bar">
+                        <label>🔍 Filtros:</label>
+                        <select id="filter-entidad" style="min-width:120px;">
+                            <option value="">Entidad</option>
+                            ${entidades.map(e => `<option value="${e}" ${S.filters.entidad === e ? 'selected' : ''}>${e}</option>`).join('')}
+                        </select>
+                        <input id="filter-objeto" placeholder="Objeto..." value="${S.filters.objeto}" style="min-width:150px;">
+                        <select id="filter-cargo" style="min-width:120px;">
+                            <option value="">Cargo</option>
+                            ${cargos.map(c => `<option value="${c}" ${S.filters.cargo === c ? 'selected' : ''}>${c}</option>`).join('')}
+                        </select>
+                        <input type="date" id="filter-desde" value="${S.filters.desde}" style="width:130px;">
+                        <input type="date" id="filter-hasta" value="${S.filters.hasta}" style="width:130px;">
+                        <span class="filter-clear" id="filter-clear">Limpiar filtros</span>
+                    </div>
+
                     ${rows.length ? `<div class="table-wrap"><table>
-                        <thead><tr><th>#</th><th>Entidad / Empresa</th><th>Objeto</th><th class="tright">Monto</th><th>Cargo</th><th>Desde</th><th>Hasta</th><th></th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th onclick="toggleSort('entidad')" class="${S.sort.column === 'entidad' ? 'active' : ''}">
+                                    Entidad <span class="sort-icon">${S.sort.column === 'entidad' ? (S.sort.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                                </th>
+                                <th onclick="toggleSort('objeto')" class="${S.sort.column === 'objeto' ? 'active' : ''}">
+                                    Objeto <span class="sort-icon">${S.sort.column === 'objeto' ? (S.sort.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                                </th>
+                                <th onclick="toggleSort('monto')" class="${S.sort.column === 'monto' ? 'active' : ''}" class="tright">
+                                    Monto <span class="sort-icon">${S.sort.column === 'monto' ? (S.sort.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                                </th>
+                                <th onclick="toggleSort('cargo')" class="${S.sort.column === 'cargo' ? 'active' : ''}">
+                                    Cargo <span class="sort-icon">${S.sort.column === 'cargo' ? (S.sort.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                                </th>
+                                <th onclick="toggleSort('desde')" class="${S.sort.column === 'desde' ? 'active' : ''}">
+                                    Desde <span class="sort-icon">${S.sort.column === 'desde' ? (S.sort.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                                </th>
+                                <th onclick="toggleSort('hasta')" class="${S.sort.column === 'hasta' ? 'active' : ''}">
+                                    Hasta <span class="sort-icon">${S.sort.column === 'hasta' ? (S.sort.direction === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                                </th>
+                                <th></th>
+                            </tr>
+                        </thead>
                         <tbody>
                             ${rows.map((e, i) => `
                                 <tr>
-                                    <td class="tnum" style="text-align:center;">${i+1}</td>
                                     <td style="font-weight:500;">${esc(e.entidad)}</td>
                                     <td style="font-size:12px;max-width:250px;">${esc(e.objeto.slice(0, 60))}${e.objeto.length>60?'…':''}</td>
                                     <td class="tright tnum">${bs(e.monto)}</td>
@@ -1440,11 +1677,14 @@
                                     </td>
                                 </tr>`).join('')}
                         </tbody>
-                    </table></div>` : `<div class="empty">${ICONS.empty}<div>Sin experiencia registrada aún.</div></div>`}
+                    </table></div>` : `<div class="empty">${ICONS.empty}<div>Sin proyectos que coincidan con los filtros.</div></div>`}
                 </div>
             </div>`;
         }
 
+        // ============================================================
+        // VIEW CONFIG
+        // ============================================================
         function viewConfig() {
             const hasConfig = getSavedFirebaseConfig() !== null;
             return `
@@ -1495,7 +1735,362 @@
         }
 
         // ============================================================
-        // FUNCIONES DE MODALES
+        // FUNCIONES DE MODALES - PAGOS DESDE COTIZACIÓN
+        // ============================================================
+        function openPagoFromCotizacion(cotizacionId) {
+            const cot = S.cotizaciones.find(c => c.id === cotizacionId);
+            if (!cot) { toast('Cotización no encontrada'); return; }
+            
+            const montoTotal = cotTotal(cot);
+            const pagosExistentes = S.pagos.filter(p => p.cotizacionId === cotizacionId);
+            const totalPagado = pagosExistentes.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
+            const saldoPendiente = montoTotal - totalPagado;
+
+            if (saldoPendiente <= 0.01) {
+                toast('✅ Esta cotización ya está completamente pagada.');
+                return;
+            }
+
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:600px;">
+                    <div class="modal-h">
+                        <h3>💰 Registrar pago - ${esc(cot.titulo)}</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row2">
+                            <div class="field">
+                                <label>Cliente</label>
+                                <input value="${esc(cot.cliente)}" disabled style="background:#f5f5f5;">
+                            </div>
+                            <div class="field">
+                                <label>Monto total</label>
+                                <input value="${bs(montoTotal)}" disabled style="background:#f5f5f5;">
+                            </div>
+                        </div>
+                        <div class="row2">
+                            <div class="field">
+                                <label>Monto ya pagado</label>
+                                <input value="${bs(totalPagado)}" disabled style="background:#f5f5f5;">
+                            </div>
+                            <div class="field">
+                                <label>Saldo pendiente</label>
+                                <input value="${bs(saldoPendiente)}" disabled style="background:#f5f5f5;" style="font-weight:bold;color:var(--primary);">
+                            </div>
+                        </div>
+                        <div class="row2">
+                            <div class="field">
+                                <label>Monto a pagar [Bs]</label>
+                                <input type="number" step="0.01" id="cp-monto" value="${Math.min(saldoPendiente, 1000)}" max="${saldoPendiente}">
+                            </div>
+                            <div class="field">
+                                <label>Fecha del pago</label>
+                                <input type="date" id="cp-fecha" value="${new Date().toISOString().slice(0, 10)}">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Descripción / concepto</label>
+                            <input id="cp-desc" placeholder="Ej. Primer pago, anticipo, etc." value="Pago parcial - ${cot.titulo}">
+                        </div>
+                        <div class="field">
+                            <label>Notas adicionales</label>
+                            <textarea id="cp-notas" rows="2"></textarea>
+                        </div>
+                        ${pagosExistentes.length ? `
+                            <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+                                <label style="font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-soft);">Historial de pagos</label>
+                                <div class="payment-history">
+                                    ${pagosExistentes.map(p => `
+                                        <div class="entry">
+                                            <span>${fmtDate(p.fecha)} - ${esc(p.descripcion)}</span>
+                                            <span style="font-weight:500;">${bs(p.montoPagado)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-success" id="m-save">💰 Registrar pago</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) overlay.remove();
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            overlay.querySelector('#m-save').onclick = async () => {
+                const montoPagar = Number(overlay.querySelector('#cp-monto').value) || 0;
+                
+                if (montoPagar <= 0) {
+                    toast('⚠️ Ingresa un monto válido.');
+                    return;
+                }
+                if (montoPagar > saldoPendiente) {
+                    toast('⚠️ El monto no puede ser mayor al saldo pendiente (${bs(saldoPendiente)}).');
+                    return;
+                }
+
+                const nuevoPago = {
+                    id: uid(),
+                    cotizacionId: cotizacionId,
+                    cliente: cot.cliente,
+                    descripcion: overlay.querySelector('#cp-desc').value.trim() || 'Pago parcial',
+                    monto: montoTotal,
+                    montoPagado: montoPagar,
+                    fecha: overlay.querySelector('#cp-fecha').value,
+                    fechaCompromiso: overlay.querySelector('#cp-fecha').value,
+                    notas: overlay.querySelector('#cp-notas').value.trim()
+                };
+
+                S.pagos.push(nuevoPago);
+                await savePagos(S.user?.uid);
+                
+                // Actualizar el estado de la cotización si está completamente pagada
+                const totalPagadoActualizado = S.pagos.filter(p => p.cotizacionId === cotizacionId).reduce((s, p) => s + Number(p.montoPagado || 0), 0);
+                if (totalPagadoActualizado >= montoTotal - 0.01) {
+                    toast('🎉 ¡Cotización completamente pagada!');
+                }
+
+                closeModal();
+                render();
+                toast('✅ Pago registrado exitosamente.');
+            };
+        }
+
+        // ============================================================
+        // FUNCIONES DE MODALES - PAGOS GENERALES
+        // ============================================================
+        function openPagoModal(pago) {
+            const isNew = !pago;
+            const p = pago ? { ...pago } : { 
+                id: uid(), 
+                fecha: new Date().toISOString().slice(0, 10), 
+                cliente: '', 
+                descripcion: '', 
+                monto: 0, 
+                montoPagado: 0, 
+                fechaCompromiso: '', 
+                notas: '',
+                cotizacionId: ''
+            };
+            
+            const cotizacionesDisponibles = S.cotizaciones.filter(c => c.estado === 'aceptada');
+
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:640px;">
+                    <div class="modal-h">
+                        <h3>${isNew ? 'Nuevo registro de pago' : 'Editar pago'}</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <label>Descripción</label>
+                            <input id="p-desc" value="${attr(p.descripcion)}" placeholder="Ej. Informe hidrológico — Poroma">
+                        </div>
+                        <div class="row2">
+                            <div class="field">
+                                <label>Cliente / proyecto</label>
+                                <input id="p-cliente" list="dl-clientes-pago" value="${attr(p.cliente)}">
+                                <datalist id="dl-clientes-pago">${S.clientes.map(cl => `<option value="${attr(cl.nombre)}">`).join('')}</datalist>
+                            </div>
+                            <div class="field">
+                                <label>Cotización relacionada</label>
+                                <select id="p-cotizacion">
+                                    <option value="">Sin relación</option>
+                                    ${cotizacionesDisponibles.map(c => `
+                                        <option value="${c.id}" ${p.cotizacionId === c.id ? 'selected' : ''}>${esc(c.titulo)} - ${bs(cotTotal(c))}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row2">
+                            <div class="field">
+                                <label>Fecha de registro</label>
+                                <input type="date" id="p-fecha" value="${attr(p.fecha)}">
+                            </div>
+                            <div class="field">
+                                <label>Fecha comprometida</label>
+                                <input type="date" id="p-comp" value="${attr(p.fechaCompromiso)}">
+                            </div>
+                        </div>
+                        <div class="row2">
+                            <div class="field">
+                                <label>Monto total [Bs]</label>
+                                <input type="number" step="0.01" id="p-monto" value="${p.monto}">
+                            </div>
+                            <div class="field">
+                                <label>Monto pagado [Bs]</label>
+                                <input type="number" step="0.01" id="p-pagado" value="${p.montoPagado||0}">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Notas</label>
+                            <textarea id="p-notas" rows="2">${esc(p.notas||'')}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-primary" id="m-save">${isNew ? 'Guardar' : 'Actualizar'}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) {
+                    overlay.remove();
+                }
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            overlay.querySelector('#m-save').onclick = async () => {
+                const nuevo = {
+                    id: p.id,
+                    descripcion: document.getElementById('p-desc').value.trim(),
+                    cliente: document.getElementById('p-cliente').value.trim(),
+                    cotizacionId: document.getElementById('p-cotizacion').value || '',
+                    monto: Number(document.getElementById('p-monto').value) || 0,
+                    montoPagado: Number(document.getElementById('p-pagado').value) || 0,
+                    fecha: document.getElementById('p-fecha').value,
+                    fechaCompromiso: document.getElementById('p-comp').value,
+                    notas: document.getElementById('p-notas').value.trim()
+                };
+                
+                if (!nuevo.descripcion) { toast('Agrega una descripción.'); return; }
+                if (!nuevo.cliente) { toast('Agrega un cliente o proyecto.'); return; }
+                
+                if (isNew) {
+                    S.pagos.push(nuevo);
+                } else {
+                    S.pagos = S.pagos.map(x => x.id === nuevo.id ? nuevo : x);
+                }
+                
+                await savePagos(S.user?.uid);
+                closeModal();
+                render();
+                toast(isNew ? '✅ Pago registrado.' : '✅ Pago actualizado.');
+            };
+        }
+
+        function openRegisterPagoModal(pago) {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:500px;">
+                    <div class="modal-h">
+                        <h3>💰 Registrar pago parcial</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <label>Descripción</label>
+                            <input id="rp-desc" value="${attr(pago.descripcion)}" disabled style="background:#f5f5f5;">
+                        </div>
+                        <div class="field">
+                            <label>Cliente</label>
+                            <input id="rp-cliente" value="${attr(pago.cliente)}" disabled style="background:#f5f5f5;">
+                        </div>
+                        <div class="row2">
+                            <div class="field">
+                                <label>Monto total [Bs]</label>
+                                <input id="rp-monto" type="number" value="${pago.monto}" disabled style="background:#f5f5f5;">
+                            </div>
+                            <div class="field">
+                                <label>Monto pagado actual [Bs]</label>
+                                <input id="rp-pagado-actual" type="number" value="${pago.montoPagado||0}" disabled style="background:#f5f5f5;">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Nuevo monto pagado [Bs]</label>
+                            <input id="rp-pagado-nuevo" type="number" step="0.01" placeholder="Ingresa el monto que se ha pagado" value="${pago.montoPagado||0}">
+                            <div style="font-size:12px;color:var(--text-soft);margin-top:4px;">
+                                Saldo pendiente: <strong id="rp-saldo">${bs(Number(pago.monto) - Number(pago.montoPagado||0))}</strong>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Fecha del pago</label>
+                            <input type="date" id="rp-fecha-pago" value="${new Date().toISOString().slice(0, 10)}">
+                        </div>
+                        <div class="field">
+                            <label>Notas adicionales</label>
+                            <textarea id="rp-notas" rows="2" placeholder="Detalles del pago..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-success" id="m-save">💰 Registrar pago</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const inputNuevo = overlay.querySelector('#rp-pagado-nuevo');
+            const saldoSpan = overlay.querySelector('#rp-saldo');
+            inputNuevo.addEventListener('input', () => {
+                const total = Number(pago.monto);
+                const nuevoPagado = Number(inputNuevo.value) || 0;
+                const saldo = total - nuevoPagado;
+                saldoSpan.textContent = bs(Math.max(0, saldo));
+            });
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) {
+                    overlay.remove();
+                }
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            overlay.querySelector('#m-save').onclick = async () => {
+                const nuevoPagado = Number(inputNuevo.value) || 0;
+                const total = Number(pago.monto);
+                
+                if (nuevoPagado > total) {
+                    toast('⚠️ El monto pagado no puede ser mayor al monto total.');
+                    return;
+                }
+                
+                if (nuevoPagado <= (pago.montoPagado || 0)) {
+                    toast('⚠️ El nuevo monto debe ser mayor al monto ya pagado.');
+                    return;
+                }
+
+                const pagoActualizado = { ...pago };
+                pagoActualizado.montoPagado = nuevoPagado;
+                pagoActualizado.fechaCompromiso = overlay.querySelector('#rp-fecha-pago').value;
+                pagoActualizado.notas = (pagoActualizado.notas || '') + '\n' + 
+                    `💰 Pago de ${bs(nuevoPagado - (pago.montoPagado || 0))} registrado el ${fmtDate(overlay.querySelector('#rp-fecha-pago').value)}`;
+                if (overlay.querySelector('#rp-notas').value.trim()) {
+                    pagoActualizado.notas += '\n' + overlay.querySelector('#rp-notas').value.trim();
+                }
+
+                S.pagos = S.pagos.map(x => x.id === pagoActualizado.id ? pagoActualizado : x);
+                await savePagos(S.user?.uid);
+                closeModal();
+                render();
+                toast('✅ Pago registrado exitosamente.');
+            };
+        }
+
+        // ============================================================
+        // FUNCIONES DE MODALES - COTIZACIONES
         // ============================================================
         function openCotModal(cot) {
             const isNew = !cot;
@@ -1656,201 +2251,9 @@
             </div>`;
         }
 
-        function openPagoModal(pago) {
-            const isNew = !pago;
-            const p = pago ? { ...pago } : { id: uid(), fecha: new Date().toISOString().slice(0, 10), cliente: '', descripcion: '', monto: 0, montoPagado: 0, fechaCompromiso: '', notas: '' };
-            
-            const overlay = document.createElement('div');
-            overlay.className = 'overlay';
-            overlay.innerHTML = `
-                <div class="modal" style="max-width:640px;">
-                    <div class="modal-h">
-                        <h3>${isNew ? 'Nuevo registro de pago' : 'Editar pago'}</h3>
-                        <button class="close" id="m-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="field">
-                            <label>Descripción</label>
-                            <input id="p-desc" value="${attr(p.descripcion)}" placeholder="Ej. Informe hidrológico — Poroma">
-                        </div>
-                        <div class="field">
-                            <label>Cliente / proyecto</label>
-                            <input id="p-cliente" list="dl-clientes-pago" value="${attr(p.cliente)}">
-                            <datalist id="dl-clientes-pago">${S.clientes.map(cl => `<option value="${attr(cl.nombre)}">`).join('')}</datalist>
-                        </div>
-                        <div class="row2">
-                            <div class="field">
-                                <label>Fecha de registro</label>
-                                <input type="date" id="p-fecha" value="${attr(p.fecha)}">
-                            </div>
-                            <div class="field">
-                                <label>Fecha comprometida</label>
-                                <input type="date" id="p-comp" value="${attr(p.fechaCompromiso)}">
-                            </div>
-                        </div>
-                        <div class="row2">
-                            <div class="field">
-                                <label>Monto total [Bs]</label>
-                                <input type="number" step="0.01" id="p-monto" value="${p.monto}">
-                            </div>
-                            <div class="field">
-                                <label>Monto pagado [Bs]</label>
-                                <input type="number" step="0.01" id="p-pagado" value="${p.montoPagado||0}">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Notas</label>
-                            <textarea id="p-notas" rows="2">${esc(p.notas||'')}</textarea>
-                        </div>
-                    </div>
-                    <div class="modal-foot">
-                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
-                        <button class="btn btn-primary" id="m-save">${isNew ? 'Guardar' : 'Actualizar'}</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            const closeModal = () => {
-                if (overlay && overlay.parentNode) {
-                    overlay.remove();
-                }
-            };
-
-            overlay.querySelector('#m-close').onclick = closeModal;
-            overlay.querySelector('#m-cancel').onclick = closeModal;
-            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
-
-            overlay.querySelector('#m-save').onclick = async () => {
-                const nuevo = {
-                    id: p.id,
-                    descripcion: document.getElementById('p-desc').value.trim(),
-                    cliente: document.getElementById('p-cliente').value.trim(),
-                    monto: Number(document.getElementById('p-monto').value) || 0,
-                    montoPagado: Number(document.getElementById('p-pagado').value) || 0,
-                    fecha: document.getElementById('p-fecha').value,
-                    fechaCompromiso: document.getElementById('p-comp').value,
-                    notas: document.getElementById('p-notas').value.trim()
-                };
-                
-                if (!nuevo.descripcion) { toast('Agrega una descripción.'); return; }
-                if (!nuevo.cliente) { toast('Agrega un cliente o proyecto.'); return; }
-                
-                if (isNew) {
-                    S.pagos.push(nuevo);
-                } else {
-                    S.pagos = S.pagos.map(x => x.id === nuevo.id ? nuevo : x);
-                }
-                
-                await savePagos(S.user?.uid);
-                closeModal();
-                render();
-                toast(isNew ? '✅ Pago registrado.' : '✅ Pago actualizado.');
-            };
-        }
-
-        function openRegisterPagoModal(pago) {
-            const overlay = document.createElement('div');
-            overlay.className = 'overlay';
-            overlay.innerHTML = `
-                <div class="modal" style="max-width:500px;">
-                    <div class="modal-h">
-                        <h3>💰 Registrar pago</h3>
-                        <button class="close" id="m-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="field">
-                            <label>Descripción</label>
-                            <input id="rp-desc" value="${attr(pago.descripcion)}" disabled style="background:#f5f5f5;">
-                        </div>
-                        <div class="field">
-                            <label>Cliente</label>
-                            <input id="rp-cliente" value="${attr(pago.cliente)}" disabled style="background:#f5f5f5;">
-                        </div>
-                        <div class="row2">
-                            <div class="field">
-                                <label>Monto total [Bs]</label>
-                                <input id="rp-monto" type="number" value="${pago.monto}" disabled style="background:#f5f5f5;">
-                            </div>
-                            <div class="field">
-                                <label>Monto pagado actual [Bs]</label>
-                                <input id="rp-pagado-actual" type="number" value="${pago.montoPagado||0}" disabled style="background:#f5f5f5;">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Nuevo monto pagado [Bs]</label>
-                            <input id="rp-pagado-nuevo" type="number" step="0.01" placeholder="Ingresa el monto que se ha pagado" value="${pago.montoPagado||0}">
-                            <div style="font-size:12px;color:var(--text-soft);margin-top:4px;">
-                                Saldo pendiente: <strong id="rp-saldo">${bs(Number(pago.monto) - Number(pago.montoPagado||0))}</strong>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Fecha del pago</label>
-                            <input type="date" id="rp-fecha-pago" value="${new Date().toISOString().slice(0, 10)}">
-                        </div>
-                        <div class="field">
-                            <label>Notas adicionales</label>
-                            <textarea id="rp-notas" rows="2" placeholder="Detalles del pago..."></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-foot">
-                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
-                        <button class="btn btn-success" id="m-save">💰 Registrar pago</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            const inputNuevo = overlay.querySelector('#rp-pagado-nuevo');
-            const saldoSpan = overlay.querySelector('#rp-saldo');
-            inputNuevo.addEventListener('input', () => {
-                const total = Number(pago.monto);
-                const nuevoPagado = Number(inputNuevo.value) || 0;
-                const saldo = total - nuevoPagado;
-                saldoSpan.textContent = bs(Math.max(0, saldo));
-            });
-
-            const closeModal = () => {
-                if (overlay && overlay.parentNode) {
-                    overlay.remove();
-                }
-            };
-
-            overlay.querySelector('#m-close').onclick = closeModal;
-            overlay.querySelector('#m-cancel').onclick = closeModal;
-            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
-
-            overlay.querySelector('#m-save').onclick = async () => {
-                const nuevoPagado = Number(inputNuevo.value) || 0;
-                const total = Number(pago.monto);
-                
-                if (nuevoPagado > total) {
-                    toast('⚠️ El monto pagado no puede ser mayor al monto total.');
-                    return;
-                }
-                
-                if (nuevoPagado <= (pago.montoPagado || 0)) {
-                    toast('⚠️ El nuevo monto debe ser mayor al monto ya pagado.');
-                    return;
-                }
-
-                const pagoActualizado = { ...pago };
-                pagoActualizado.montoPagado = nuevoPagado;
-                pagoActualizado.fechaCompromiso = overlay.querySelector('#rp-fecha-pago').value;
-                pagoActualizado.notas = (pagoActualizado.notas || '') + '\n' + 
-                    `💰 Pago de ${bs(nuevoPagado - (pago.montoPagado || 0))} registrado el ${fmtDate(overlay.querySelector('#rp-fecha-pago').value)}`;
-                if (overlay.querySelector('#rp-notas').value.trim()) {
-                    pagoActualizado.notas += '\n' + overlay.querySelector('#rp-notas').value.trim();
-                }
-
-                S.pagos = S.pagos.map(x => x.id === pagoActualizado.id ? pagoActualizado : x);
-                await savePagos(S.user?.uid);
-                closeModal();
-                render();
-                toast('✅ Pago registrado exitosamente.');
-            };
-        }
-
+        // ============================================================
+        // FUNCIONES DE MODALES - EXPERIENCIA
+        // ============================================================
         function openExpModal(exp) {
             const isNew = !exp;
             const e = exp ? { ...exp } : { id: uid(), entidad: '', objeto: '', monto: 0, cargo: '', desde: '', hasta: '' };
@@ -1928,7 +2331,7 @@
                             <div style="background:var(--gantt-bg);padding:12px;border-radius:var(--radius);font-size:12px;font-family:monospace;">
                                 <strong>Columnas requeridas:</strong><br>
                                 Entidad | Objeto | Monto | Cargo | Desde | Hasta<br>
-                                <span style="color:var(--text-soft);">(Las fechas en formato YYYY-MM-DD o DD/MM/YYYY)</span>
+                                <span style="color:var(--text-soft);">(Fechas: DD/MM/YYYY, DD-MM-YYYY, MM/DD/YYYY, o YYYY-MM-DD)</span>
                             </div>
                         </div>
                         <div class="file-upload-area" id="file-drop-area">
@@ -1963,7 +2366,6 @@
             overlay.querySelector('#m-cancel').onclick = closeModal;
             overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
 
-            // Drag and drop
             const dropArea = overlay.querySelector('#file-drop-area');
             const fileInput = overlay.querySelector('#file-input');
 
@@ -1984,7 +2386,7 @@
                 dropArea.style.background = 'transparent';
                 if (e.dataTransfer.files.length) {
                     fileInput.files = e.dataTransfer.files;
-                    handleFile(fileInput.files[0]);
+                    handleFile(e.dataTransfer.files[0]);
                 }
             });
 
@@ -1996,6 +2398,58 @@
                 }
             });
 
+            function parseDate(value) {
+                if (!value) return null;
+                
+                if (typeof value === 'number' && value > 10000) {
+                    const excelEpoch = new Date(1899, 11, 30);
+                    const date = new Date(excelEpoch.getTime() + value * 86400000);
+                    if (!isNaN(date)) return date.toISOString().slice(0, 10);
+                }
+                
+                const str = String(value).trim();
+                
+                const formats = [
+                    { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, order: ['d', 'm', 'y'] },
+                    { regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/, order: ['d', 'm', 'y'] },
+                    { regex: /^(\d{4})-(\d{1,2})-(\d{1,2})$/, order: ['y', 'm', 'd'] },
+                    { regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/, order: ['d', 'm', 'y'] }
+                ];
+                
+                let d = new Date(str);
+                if (!isNaN(d) && str.includes('-')) {
+                    return d.toISOString().slice(0, 10);
+                }
+                
+                for (const fmt of formats) {
+                    const match = str.match(fmt.regex);
+                    if (match) {
+                        let year, month, day;
+                        const parts = { y: parseInt(match[1]), m: parseInt(match[2]), d: parseInt(match[3]) };
+                        if (parts.y < 100) parts.y += 2000;
+                        if (parts.m > 12 && parts.d <= 12) {
+                            [parts.m, parts.d] = [parts.d, parts.m];
+                        }
+                        year = parts.y;
+                        month = parts.m;
+                        day = parts.d;
+                        if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                            const dateObj = new Date(year, month - 1, day);
+                            if (!isNaN(dateObj)) {
+                                return dateObj.toISOString().slice(0, 10);
+                            }
+                        }
+                    }
+                }
+                
+                d = new Date(str);
+                if (!isNaN(d)) {
+                    return d.toISOString().slice(0, 10);
+                }
+                
+                return null;
+            }
+
             function handleFile(file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -2005,8 +2459,12 @@
                         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
-                        // Mapear columnas
-                        const headers = Object.keys(jsonData[0] || {});
+                        if (!jsonData || jsonData.length === 0) {
+                            toast('❌ El archivo no contiene datos.');
+                            return;
+                        }
+
+                        const headers = Object.keys(jsonData[0]);
                         const mapCol = (posible) => {
                             for (const h of headers) {
                                 if (h.toLowerCase().includes(posible.toLowerCase())) return h;
@@ -2014,29 +2472,34 @@
                             return null;
                         };
 
+                        const colEntidad = mapCol('entidad') || mapCol('empresa') || headers[0];
+                        const colObjeto = mapCol('objeto') || mapCol('proyecto') || headers[1];
+                        const colMonto = mapCol('monto') || headers[2];
+                        const colCargo = mapCol('cargo') || headers[3];
+                        const colDesde = mapCol('desde') || headers[4];
+                        const colHasta = mapCol('hasta') || headers[5];
+
+                        if (!colEntidad || !colObjeto) {
+                            toast('❌ No se encontraron las columnas "Entidad" y "Objeto". Verifica el formato.');
+                            return;
+                        }
+
                         importedData = jsonData.map(row => {
-                            const entidad = row[mapCol('entidad')] || row[mapCol('empresa')] || '';
-                            const objeto = row[mapCol('objeto')] || row[mapCol('proyecto')] || '';
-                            const monto = parseFloat(String(row[mapCol('monto')] || '0').replace(/,/g, '')) || 0;
-                            const cargo = row[mapCol('cargo')] || '';
-                            let desde = row[mapCol('desde')] || '';
-                            let hasta = row[mapCol('hasta')] || '';
-
-                            // Intentar parsear fechas
-                            if (desde) {
-                                try {
-                                    const d = new Date(desde);
-                                    if (!isNaN(d)) desde = d.toISOString().slice(0, 10);
-                                } catch (e) {}
+                            const entidad = String(row[colEntidad] || '').trim();
+                            const objeto = String(row[colObjeto] || '').trim();
+                            let monto = 0;
+                            if (colMonto) {
+                                const val = String(row[colMonto] || '0').replace(/[^0-9.,-]/g, '').replace(/,/g, '');
+                                monto = parseFloat(val) || 0;
                             }
-                            if (hasta) {
-                                try {
-                                    const d = new Date(hasta);
-                                    if (!isNaN(d)) hasta = d.toISOString().slice(0, 10);
-                                } catch (e) {}
-                            }
+                            const cargo = colCargo ? String(row[colCargo] || '').trim() : '';
+                            let desde = colDesde ? parseDate(row[colDesde]) : null;
+                            let hasta = colHasta ? parseDate(row[colHasta]) : null;
 
-                            return { entidad: String(entidad).trim(), objeto: String(objeto).trim(), monto, cargo: String(cargo).trim(), desde, hasta };
+                            if (!desde) desde = new Date().toISOString().slice(0, 10);
+                            if (!hasta) hasta = new Date().toISOString().slice(0, 10);
+
+                            return { entidad, objeto, monto, cargo, desde, hasta };
                         }).filter(row => row.entidad || row.objeto);
 
                         mostrarPreview(importedData);
@@ -2099,7 +2562,6 @@
                     return;
                 }
 
-                // Validar y preparar datos
                 const nuevos = importedData.map(row => ({
                     id: uid(),
                     entidad: row.entidad || 'Sin entidad',
@@ -2110,7 +2572,6 @@
                     hasta: row.hasta || new Date().toISOString().slice(0, 10)
                 }));
 
-                const totalActual = S.experiencia.length;
                 S.experiencia = [...S.experiencia, ...nuevos];
                 await saveExperiencia(S.user?.uid);
                 
@@ -2127,7 +2588,6 @@
             try {
                 const wb = XLSX.utils.book_new();
                 
-                // Hoja 1: Datos Personales
                 const dpData = [
                     ['HOJA DE VIDA ESPECIALISTA HIDRÓLOGO'],
                     [''],
@@ -2146,7 +2606,6 @@
                 ws1['!cols'] = [{ wch: 32 }, { wch: 45 }];
                 XLSX.utils.book_append_sheet(wb, ws1, 'Datos Generales');
 
-                // Hoja 2: Formación Académica
                 const faData = [
                     ['2. FORMACIÓN ACADÉMICA'],
                     [''],
@@ -2159,7 +2618,6 @@
                 ws2['!cols'] = [{ wch: 50 }, { wch: 16 }, { wch: 16 }, { wch: 55 }];
                 XLSX.utils.book_append_sheet(wb, ws2, 'Formación Académica');
 
-                // Hoja 3: Cursos de Especialización
                 const ceData = [
                     ['3. CURSOS DE ESPECIALIZACIÓN'],
                     [''],
@@ -2172,7 +2630,6 @@
                 ws3['!cols'] = [{ wch: 48 }, { wch: 16 }, { wch: 16 }, { wch: 55 }, { wch: 18 }];
                 XLSX.utils.book_append_sheet(wb, ws3, 'Cursos Especialización');
 
-                // Hoja 4: Experiencia
                 const expData = [
                     ['4. EXPERIENCIA GENERAL'],
                     [''],
@@ -2471,7 +2928,6 @@
                     S.datosPersonales.profesion = document.getElementById('cv-profesion').value.trim();
                     S.datosPersonales.registroProfesional = document.getElementById('cv-rni').value.trim();
 
-                    // Guardar formación
                     const formacionRows = document.querySelectorAll('#cv-formacion-container .row4');
                     S.formacion = [];
                     formacionRows.forEach(row => {
@@ -2484,7 +2940,6 @@
                         }
                     });
 
-                    // Guardar cursos
                     const cursosRows = document.querySelectorAll('#cv-cursos-container .row4');
                     S.cursos = [];
                     cursosRows.forEach(row => {
@@ -2528,7 +2983,6 @@
                 };
             }
 
-            // Eliminar formación (delegación)
             document.addEventListener('click', function(e) {
                 if (e.target.classList.contains('cv-f-remove')) {
                     const row = e.target.closest('.row4');
@@ -2548,7 +3002,6 @@
                 }
             });
 
-            // Agregar curso
             const btnAddCurso = document.getElementById('cv-add-curso');
             if (btnAddCurso) {
                 btnAddCurso.onclick = () => {
@@ -2715,8 +3168,13 @@
         }
 
         // ============================================================
-        // INICIO
+        // INICIO - HACER FUNCIONES GLOBALES PARA onclick
         // ============================================================
+        window.openPagoFromCotizacion = openPagoFromCotizacion;
+        window.toggleSort = toggleSort;
+        window.clearFilters = clearFilters;
+        window.calcularEdad = calcularEdad;
+
         initLoginEvents();
         initFirebase();
     </script>
