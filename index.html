@@ -12,14 +12,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Librería para generar Word -->
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.3/build/index.min.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         /* ============================================================
-           ESTILOS COMPLETOS (manteniendo los existentes)
+           ESTILOS COMPLETOS
            ============================================================ */
         :root {
             --bg: #F2F0EB;
@@ -42,6 +41,9 @@
             --gantt-active: #27AE60;
             --gantt-educ: #8E44AD;
             --gantt-course: #E67E22;
+            --success: #27AE60;
+            --danger: #C0392B;
+            --warning: #F39C12;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -145,7 +147,12 @@
             margin-top: 6px;
             transition: var(--transition);
         }
-        .nav-user .logout-btn:hover { background: #FDF2F0; border-color: #C0392B; color: #C0392B; }
+        .nav-user .logout-btn:hover { background: #FDF2F0; border-color: var(--danger); color: var(--danger); }
+        .nav-user .goto-lic {
+            margin-top: 6px;
+            width: 100%;
+            justify-content: center;
+        }
 
         main {
             flex: 1;
@@ -199,10 +206,10 @@
         .btn-accent:hover { background: var(--accent-light); }
         .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
         .btn-ghost:hover { background: var(--surface-hover); }
-        .btn-danger { background: transparent; color: #C0392B; border-color: #F5D6D3; }
+        .btn-danger { background: transparent; color: var(--danger); border-color: #F5D6D3; }
         .btn-danger:hover { background: #FDF2F0; }
         .btn-sm { padding: 6px 12px; font-size: 12px; }
-        .btn-success { background: #27AE60; color: #fff; }
+        .btn-success { background: var(--success); color: #fff; }
         .btn-success:hover { background: #219A52; }
         .btn-word { background: #2B579A; color: #fff; }
         .btn-word:hover { background: #1A3F6E; }
@@ -257,7 +264,7 @@
         }
         .login-box .toggle-link a:hover { text-decoration: underline; }
         .login-box .error {
-            color: #C0392B;
+            color: var(--danger);
             font-size: 13px;
             padding: 8px 12px;
             background: #FDF2F0;
@@ -322,8 +329,8 @@
             background: var(--primary);
         }
         .kpi.accent::before { background: var(--accent); }
-        .kpi.success::before { background: #27AE60; }
-        .kpi.danger::before { background: #C0392B; }
+        .kpi.success::before { background: var(--success); }
+        .kpi.danger::before { background: var(--danger); }
         .kpi .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 6px; }
         .kpi .val { font-size: 24px; font-weight: 700; color: var(--primary); }
         .kpi .sub { font-size: 12px; color: var(--text-soft); margin-top: 4px; }
@@ -387,11 +394,11 @@
         }
         .stamp.borrador { color: var(--text-soft); background: #F0EFEB; }
         .stamp.enviada { color: var(--accent); background: #F5ECD9; }
-        .stamp.aceptada { color: #27AE60; background: #E8F5ED; }
-        .stamp.rechazada { color: #C0392B; background: #FDF2F0; }
-        .stamp.pendiente { color: #C0392B; background: #FDF2F0; }
+        .stamp.aceptada { color: var(--success); background: #E8F5ED; }
+        .stamp.rechazada { color: var(--danger); background: #FDF2F0; }
+        .stamp.pendiente { color: var(--danger); background: #FDF2F0; }
         .stamp.parcial { color: var(--accent); background: #F5ECD9; }
-        .stamp.pagado { color: #27AE60; background: #E8F5ED; }
+        .stamp.pagado { color: var(--success); background: #E8F5ED; }
         .stamp.en-curso { color: var(--accent); background: #F5ECD9; border-style: dashed; }
 
         .empty { padding: 40px 20px; text-align: center; color: var(--text-soft); }
@@ -403,7 +410,7 @@
             flex-wrap: wrap;
             margin-bottom: 14px;
             padding: 12px 16px;
-            background: var(--gantt-bg);
+            background: #F0F2F5;
             border-radius: var(--radius);
             align-items: center;
         }
@@ -755,6 +762,24 @@
             cursor: pointer;
         }
 
+        .cv-edit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .cv-edit-grid .field input {
+            font-size: 13px;
+            padding: 8px 10px;
+        }
+        .cv-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin: 16px 0 10px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--border);
+        }
+
         #toast {
             position: fixed;
             bottom: 24px;
@@ -790,6 +815,7 @@
             .dash-grid-2 { grid-template-columns: 1fr; }
             .chart-bar-row .label { width: 70px; font-size: 11px; }
             .gantt-controls { flex-direction: column; align-items: stretch; }
+            .cv-edit-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 480px) {
             .kpi-grid { grid-template-columns: 1fr 1fr; }
@@ -805,7 +831,7 @@
     <div id="login-container" class="login-container">
         <div class="login-box">
             <h2>Ing. Antequera</h2>
-            <p class="sub">Inicia sesión para acceder a tu suite profesional</p>
+            <p class="sub">Suite Profesional — Hidráulica · Hidrología</p>
             <div id="login-error" class="error"></div>
             
             <form id="login-form" action="javascript:void(0)">
@@ -868,6 +894,7 @@
             <div class="nav-user">
                 <div class="email" id="user-email">usuario@email.com</div>
                 <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
+                <a href="licitaciones.html" class="btn btn-sm btn-accent goto-lic">📋 Gestor de Licitaciones</a>
             </div>
             <div class="nav-foot mono">RNI 28.106 · v3.1</div>
         </aside>
@@ -971,13 +998,11 @@
             user: null,
             editingCV: false,
             exportarSoloCertificados: false,
-            // Referencias laborales
             referencias: [
                 { contratante: 'CONSULTORA Y CONSTRUCTORA ANFAYA', supervisor: 'PEDRO JESUS QUISPE', cargo: 'RESPONSABLE', telefono: '76112087' },
                 { contratante: 'FONDO PRODUCTIVO Y SOCIAL FPS CHUQUISACA', supervisor: 'FELICIDAD ALMENDRAS C.', cargo: 'FISCAL DE PROYECTOS', telefono: '77135608' },
                 { contratante: 'ROES CONSULTORES', supervisor: 'RODRIGO UZQUEDA SEGOVIA', cargo: 'REPRESENTANTE LEGAL', telefono: '72972874' }
             ],
-            // Filtros
             cotFilters: { fecha: '', cliente: '', estado: '' },
             cotSort: { column: null, direction: 'asc' },
             pagoFilters: { fecha: '', cliente: '', estado: '' },
@@ -987,7 +1012,7 @@
         };
 
         // ============================================================
-        // ICONS
+        // ICONS (definidos para no repetir)
         // ============================================================
         const ICONS = {
             dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
@@ -1481,6 +1506,9 @@
             const topEntidades = Object.entries(porEntidad).sort((a, b) => b[1] - a[1]).slice(0, 8);
             const maxEntidad = Math.max(1, ...topEntidades.map(x => x[1]));
 
+            // Obtener últimas 3 cotizaciones aceptadas
+            const ultimasAceptadas = cots.filter(c => c.estado === 'aceptada').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')).slice(0, 3);
+
             return `
             <div class="page-head">
                 <div><p class="eyebrow">Panel general</p><h1>Dashboard</h1><p>Resumen de cotizaciones, cobros y experiencia profesional.</p></div>
@@ -1592,7 +1620,29 @@
             </div>
             ` : ''}
 
+            <!-- Últimas cotizaciones aceptadas -->
+            ${ultimasAceptadas.length ? `
             <div class="panel">
+                <div class="panel-h"><h3>📋 Últimas cotizaciones aceptadas</h3></div>
+                <div class="panel-body">
+                    ${ultimasAceptadas.map(c => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+                            <div>
+                                <div style="font-weight:600;">${esc(c.titulo)}</div>
+                                <div style="font-size:12px;color:var(--text-soft);">${esc(c.cliente)} · ${fmtDate(c.fecha)}</div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <span style="font-weight:600;">${bs(cotTotal(c))}</span>
+                                <span class="stamp aceptada">Aceptada</span>
+                                <button class="btn btn-sm btn-success" onclick="openPagoFromCotizacion('${c.id}')">💰</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+
+            <div class="panel" style="margin-top:20px;">
                 <div class="panel-h"><h3>📋 Resumen de hoja de vida</h3></div>
                 <div class="panel-body">
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
@@ -1773,7 +1823,7 @@
         }
 
         // ============================================================
-        // VIEWS - EXPERIENCIA (con botones de Word)
+        // VIEWS - EXPERIENCIA
         // ============================================================
         function viewExperiencia() {
             const rows = applyExpFiltersAndSort(S.experiencia);
@@ -2086,7 +2136,6 @@
                     </div>
                 </div>
 
-                <!-- Opciones de exportación -->
                 <div style="margin-bottom:24px;">
                     <h4 style="font-size:13.5px;color:var(--primary);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);">Opciones de exportación</h4>
                     <div class="export-options">
@@ -2106,13 +2155,11 @@
         // FUNCIONES DE EXPORTACIÓN A WORD
         // ============================================================
         async function exportA5() {
-            // Verificar que la librería docx esté disponible
             if (typeof docx === 'undefined') {
                 toast('⏳ La librería de Word aún está cargando. Intenta de nuevo en unos segundos.');
                 return;
             }
 
-            // Mostrar modal para seleccionar A-5 o A-7 y cargo
             const overlay = document.createElement('div');
             overlay.className = 'overlay';
             overlay.innerHTML = `
@@ -2170,13 +2217,12 @@
 
         async function generarWordA5(tipo, cargo, entidad, proyecto) {
             try {
-                const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, WidthType, AlignmentType, HeadingLevel, TabStopPosition, TabStopType } = docx;
+                const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType } = docx;
 
                 const doc = new Document({
                     sections: [{
                         properties: {},
                         children: [
-                            // TÍTULO
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: `FORMULARIO ${tipo}`, bold: true, size: 28, font: 'Arial' })
@@ -2192,7 +2238,6 @@
                                 spacing: { after: 400 }
                             }),
 
-                            // 1. DATOS GENERALES
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '1. DATOS GENERALES', bold: true, size: 18, font: 'Arial' })
@@ -2200,7 +2245,6 @@
                                 spacing: { after: 200 }
                             }),
 
-                            // Tabla de datos personales
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2278,7 +2322,6 @@
                                 ]
                             }),
 
-                            // 2. FORMACIÓN ACADÉMICA
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '2. FORMACIÓN ACADÉMICA', bold: true, size: 18, font: 'Arial' })
@@ -2296,7 +2339,6 @@
                                             new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Título en Provisión Nacional', bold: true, size: 16 })], spacing: { after: 0 } })] })
                                         ]
                                     }),
-                                    // Datos de formación
                                     ...S.formacion.map(f => {
                                         const desde = f.desde ? new Date(f.desde + 'T00:00:00') : null;
                                         const hasta = f.hasta ? new Date(f.hasta + 'T00:00:00') : null;
@@ -2316,7 +2358,6 @@
                                 ]
                             }),
 
-                            // 3. CURSOS DE ESPECIALIZACIÓN
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '3. CURSOS DE ESPECIALIZACIÓN', bold: true, size: 18, font: 'Arial' })
@@ -2352,7 +2393,6 @@
                                 ]
                             }),
 
-                            // 4. EXPERIENCIA EN CONSULTORÍAS
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '4. EXPERIENCIA EN CONSULTORÍAS EN GENERAL', bold: true, size: 18, font: 'Arial' })
@@ -2392,7 +2432,6 @@
                                 ]
                             }),
 
-                            // 5. EXPERIENCIA EN EL CARGO (si es A-5)
                             ...(tipo === 'A-5' ? [
                                 new Paragraph({
                                     children: [
@@ -2431,7 +2470,6 @@
                                 })
                             ] : []),
 
-                            // DECLARACIÓN JURADA
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'DECLARACIÓN JURADA', bold: true, size: 18, font: 'Arial' })
@@ -2553,7 +2591,6 @@
             overlay.querySelector('#m-cancel').onclick = closeModal;
             overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
 
-            // Agregar referencia
             overlay.querySelector('#part-add-ref').onclick = () => {
                 const container = overlay.querySelector('#referencias-container');
                 const div = document.createElement('div');
@@ -2570,7 +2607,6 @@
                 container.appendChild(div);
             };
 
-            // Eliminar referencia
             overlay.querySelector('#referencias-container').addEventListener('click', (e) => {
                 if (e.target.classList.contains('ref-remove')) {
                     const row = e.target.closest('.row4');
@@ -2588,7 +2624,6 @@
                 const telefono = overlay.querySelector('#part-telefono').value.trim() || '73420716';
                 const email = overlay.querySelector('#part-email').value.trim() || 'carlosantencinas@gmail.com';
 
-                // Obtener referencias
                 const referencias = [];
                 overlay.querySelectorAll('#referencias-container .row4').forEach(row => {
                     const contratante = row.querySelector('.ref-contratante').value.trim();
@@ -2600,7 +2635,6 @@
                     }
                 });
 
-                // Guardar referencias en Firebase
                 S.referencias = referencias;
                 await saveReferencias(S.user?.uid);
 
@@ -2617,7 +2651,6 @@
                     sections: [{
                         properties: {},
                         children: [
-                            // Título
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'FORMULARIO DE PARTICIPACIÓN', bold: true, size: 28, font: 'Arial' })
@@ -2626,7 +2659,6 @@
                                 spacing: { after: 400 }
                             }),
 
-                            // Texto introductorio
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'Luego de examinar la documentación de la invitación, la cual declaro aceptar y conocer, presento mi participación para realizar el servicio de consultoría de acuerdo con las características, requerimientos y plazos detallados en los Términos de Referencia.', size: 18, font: 'Arial' })
@@ -2640,7 +2672,6 @@
                                 spacing: { after: 200 }
                             }),
 
-                            // Tabla de datos personales
                             new Table({
                                 rows: [
                                     new TableRow({
@@ -2694,7 +2725,6 @@
                                 ]
                             }),
 
-                            // 1. FORMACIÓN
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '1. FORMACIÓN [PROFESIONAL].', bold: true, size: 20, font: 'Arial' })
@@ -2728,7 +2758,6 @@
                                 ]
                             }),
 
-                            // CURSOS DE ESPECIALIZACIÓN
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'CURSOS DE ESPECIALIZACIÓN', bold: true, size: 18, font: 'Arial' })
@@ -2765,7 +2794,6 @@
                                 ]
                             }),
 
-                            // 2. EXPERIENCIA
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '2. EXPERIENCIA', bold: true, size: 20, font: 'Arial' })
@@ -2799,7 +2827,6 @@
                                 ]
                             }),
 
-                            // 2.2. Experiencia Específica
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '2.2. Experiencia [PROFESIONAL] Específica.', bold: true, size: 16, font: 'Arial' })
@@ -2834,7 +2861,6 @@
                                 ]
                             }),
 
-                            // 3. REFERENCIAS LABORALES
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: '3. REFERENCIAS LABORALES.', bold: true, size: 18, font: 'Arial' })
@@ -2874,7 +2900,6 @@
                                 ]
                             }),
 
-                            // Declaración final
                             new Paragraph({
                                 children: [
                                     new TextRun({ text: 'Entiendo y reconozco que el Contratante no está obligado a aceptar la presente participación y que la selección del Consultor para el presente servicio de consultoría se basará en la mejor calificación de antecedentes académicos y de experiencia.', size: 16, font: 'Arial' })
@@ -4063,53 +4088,32 @@
                 const btn = document.getElementById('btn-login');
                 btn.disabled = true;
                 btn.textContent = 'Iniciando sesión...';
-                try {
-                    await login(email, password);
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Iniciar sesión';
-                }
+                try { await login(email, password); } finally { btn.disabled = false;
+                    btn.textContent = 'Iniciar sesión'; }
             });
 
             document.getElementById('register-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const email = document.getElementById('register-email').value.trim();
                 const password = document.getElementById('register-password').value;
-                if (!email || !password) {
-                    showLoginError('Completa todos los campos.');
-                    return;
-                }
-                if (password.length < 6) {
-                    showLoginError('La contraseña debe tener al menos 6 caracteres.');
-                    return;
-                }
+                if (!email || !password) { showLoginError('Completa todos los campos.'); return; }
+                if (password.length < 6) { showLoginError('La contraseña debe tener al menos 6 caracteres.'); return; }
                 const btn = document.getElementById('btn-register');
                 btn.disabled = true;
                 btn.textContent = 'Creando cuenta...';
-                try {
-                    await register(email, password);
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Crear cuenta';
-                }
+                try { await register(email, password); } finally { btn.disabled = false;
+                    btn.textContent = 'Crear cuenta'; }
             });
 
             document.getElementById('reset-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const email = document.getElementById('reset-email').value.trim();
-                if (!email) {
-                    showLoginError('Ingresa tu correo electrónico.');
-                    return;
-                }
+                if (!email) { showLoginError('Ingresa tu correo electrónico.'); return; }
                 const btn = document.getElementById('btn-reset');
                 btn.disabled = true;
                 btn.textContent = 'Enviando...';
-                try {
-                    await resetPassword(email);
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Enviar correo de recuperación';
-                }
+                try { await resetPassword(email); } finally { btn.disabled = false;
+                    btn.textContent = 'Enviar correo de recuperación'; }
             });
 
             document.getElementById('goto-register').onclick = () => {
