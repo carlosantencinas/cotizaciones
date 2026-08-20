@@ -291,9 +291,29 @@
         .panel-h h3 { font-size: 15px; font-weight: 600; color: var(--primary); margin: 0; }
         .panel-body { padding: 18px 20px; }
 
+        /* Dashboard Grid */
+        .dash-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .dash-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 1024px) {
+            .dash-grid-2, .dash-grid-3 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .dash-grid-2, .dash-grid-3 { grid-template-columns: 1fr; }
+        }
+
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 14px;
             margin-bottom: 24px;
         }
@@ -532,6 +552,62 @@
         }
         .filter-bar .filter-clear:hover { color: var(--danger); }
 
+        /* Gráficos de barras en dashboard */
+        .chart-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .chart-bar-row .label {
+            width: 100px;
+            flex-shrink: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .chart-bar-row .track {
+            flex: 1;
+            height: 18px;
+            background: var(--gantt-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+        .chart-bar-row .track .fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .chart-bar-row .value {
+            width: 70px;
+            flex-shrink: 0;
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-soft);
+        }
+        .chart-pie {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .chart-pie .slice {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+        .chart-pie .slice .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
         .overlay {
             position: fixed;
             inset: 0;
@@ -699,6 +775,8 @@
             .login-box { padding: 28px 20px; }
             .filter-bar { flex-direction: column; align-items: stretch; }
             .filter-bar .filter-clear { margin-left: 0; text-align: right; }
+            .dash-grid-2, .dash-grid-3 { grid-template-columns: 1fr; }
+            .chart-bar-row .label { width: 70px; font-size: 11px; }
         }
         @media (max-width: 480px) {
             .kpi-grid { grid-template-columns: 1fr 1fr; }
@@ -778,7 +856,7 @@
                 <div class="email" id="user-email">usuario@email.com</div>
                 <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
             </div>
-            <div class="nav-foot mono">RNI 28.106 · v2.6</div>
+            <div class="nav-foot mono">RNI 28.106 · v2.7</div>
         </aside>
         <main id="main"></main>
     </div>
@@ -1234,7 +1312,7 @@
         }
 
         // ============================================================
-        // VIEW DASHBOARD - CON AVANCE DE PAGOS
+        // VIEW DASHBOARD - CON GRÁFICOS DE EXPERIENCIA Y PAGOS PENDIENTES
         // ============================================================
         function viewDashboard() {
             const cots = S.cotizaciones;
@@ -1248,37 +1326,103 @@
             const totalExperiencia = exp.reduce((s, e) => s + Number(e.monto || 0), 0);
             const edad = calcularEdad(S.datosPersonales.fechaNacimiento);
 
-            // Calcular avance de pagos por cotización aceptada
+            // Calcular avance de pagos - SOLO COTIZACIONES ACEPTADAS CON SALDO PENDIENTE
             const cotizacionesAceptadas = cots.filter(c => c.estado === 'aceptada');
             const avancePagos = cotizacionesAceptadas.map(c => {
                 const montoTotal = cotTotal(c);
                 const pagosRelacionados = pagos.filter(p => p.cotizacionId === c.id);
                 const totalPagado = pagosRelacionados.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
                 const porcentaje = montoTotal > 0 ? (totalPagado / montoTotal) * 100 : 0;
+                const saldoPendiente = montoTotal - totalPagado;
                 return {
                     ...c,
                     montoTotal,
                     totalPagado,
+                    saldoPendiente,
                     porcentaje: Math.min(100, porcentaje),
-                    pagos: pagosRelacionados
+                    pagos: pagosRelacionados,
+                    estaPagado: saldoPendiente <= 0.01
                 };
+            }).filter(item => !item.estaPagado); // SOLO PENDIENTES
+
+            // Gráficos de experiencia
+            const colores = ['#1A4A5C', '#3A7A8F', '#B8862E', '#27AE60', '#C0392B', '#8E44AD'];
+            
+            // Por cargo
+            const porCargo = {};
+            exp.forEach(e => { porCargo[e.cargo] = (porCargo[e.cargo] || 0) + Number(e.monto || 0); });
+            const topCargos = Object.entries(porCargo).sort((a, b) => b[1] - a[1]).slice(0, 8);
+            const maxCargo = Math.max(1, ...topCargos.map(x => x[1]));
+
+            // Por entidad (top 8)
+            const porEntidad = {};
+            exp.forEach(e => { porEntidad[e.entidad] = (porEntidad[e.entidad] || 0) + Number(e.monto || 0); });
+            const topEntidades = Object.entries(porEntidad).sort((a, b) => b[1] - a[1]).slice(0, 8);
+            const maxEntidad = Math.max(1, ...topEntidades.map(x => x[1]));
+
+            // Distribución por año
+            const porAnio = {};
+            exp.forEach(e => {
+                if (e.desde) {
+                    const anio = new Date(e.desde + 'T00:00:00').getFullYear();
+                    porAnio[anio] = (porAnio[anio] || 0) + Number(e.monto || 0);
+                }
             });
+            const anios = Object.keys(porAnio).sort();
+            const maxAnio = Math.max(1, ...Object.values(porAnio));
 
             return `
             <div class="page-head">
                 <div><p class="eyebrow">Panel general</p><h1>Dashboard</h1><p>Resumen de cotizaciones, cobros y experiencia profesional.</p></div>
             </div>
+
+            <!-- KPI -->
             <div class="kpi-grid">
                 <div class="kpi"><div class="label">Total cotizado</div><div class="val">${bs(totalCotizado)}</div><div class="sub">${cots.length} cotizaciones</div></div>
                 <div class="kpi success"><div class="label">Total aceptado</div><div class="val">${bs(totalAceptado)}</div><div class="sub">${cotizacionesAceptadas.length} aceptadas</div></div>
                 <div class="kpi accent"><div class="label">Cobrado a la fecha</div><div class="val">${bs(totalCobrado)}</div><div class="sub">${pagos.length} registros</div></div>
-                <div class="kpi danger"><div class="label">Por cobrar</div><div class="val">${bs(totalPorCobrar)}</div><div class="sub">${pagos.filter(p=>pagoEstado(p)!=='pagado').length} pendientes</div></div>
+                <div class="kpi danger"><div class="label">Por cobrar</div><div class="val">${bs(totalPorCobrar)}</div><div class="sub">${avancePagos.length} pendientes</div></div>
                 <div class="kpi"><div class="label">Experiencia total</div><div class="val">${bs(totalExperiencia)}</div><div class="sub">${exp.length} proyectos</div></div>
             </div>
 
-            <!-- Avance de pagos de cotizaciones aceptadas -->
-            <div class="panel">
-                <div class="panel-h"><h3>💰 Avance de pagos - Cotizaciones aceptadas</h3></div>
+            <!-- Gráficos de experiencia -->
+            <div class="dash-grid-2">
+                <div class="panel">
+                    <div class="panel-h"><h3>📊 Monto por cargo</h3></div>
+                    <div class="panel-body">
+                        ${topCargos.length ? topCargos.map(([cargo, monto], i) => `
+                            <div class="chart-bar-row">
+                                <span class="label" title="${esc(cargo)}">${esc(cargo.slice(0, 25))}${cargo.length>25?'…':''}</span>
+                                <div class="track">
+                                    <div class="fill" style="width:${(monto/maxCargo*100)||0}%;background:${colores[i % colores.length]};"></div>
+                                </div>
+                                <span class="value">${bs(monto)}</span>
+                            </div>
+                        `).join('') : '<div style="color:var(--text-soft);font-size:13px;">Sin datos de experiencia aún.</div>'}
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-h"><h3>🏢 Monto por entidad</h3></div>
+                    <div class="panel-body">
+                        ${topEntidades.length ? topEntidades.map(([entidad, monto], i) => `
+                            <div class="chart-bar-row">
+                                <span class="label" title="${esc(entidad)}">${esc(entidad.slice(0, 20))}${entidad.length>20?'…':''}</span>
+                                <div class="track">
+                                    <div class="fill" style="width:${(monto/maxEntidad*100)||0}%;background:${colores[(i+2) % colores.length]};"></div>
+                                </div>
+                                <span class="value">${bs(monto)}</span>
+                            </div>
+                        `).join('') : '<div style="color:var(--text-soft);font-size:13px;">Sin datos de experiencia aún.</div>'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avance de pagos - SOLO PENDIENTES -->
+            <div class="panel" style="margin-bottom:20px;">
+                <div class="panel-h">
+                    <h3>💰 Avance de pagos pendientes (${avancePagos.length})</h3>
+                    ${avancePagos.length ? `<span style="font-size:12px;color:var(--text-soft);">${avancePagos.filter(p => p.porcentaje > 0).length} con pagos parciales</span>` : ''}
+                </div>
                 <div class="panel-body">
                     ${avancePagos.length ? avancePagos.map(item => `
                         <div style="margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);">
@@ -1289,11 +1433,11 @@
                                 </div>
                                 <div style="text-align:right;">
                                     <div style="font-weight:600;font-size:14px;">${bs(item.totalPagado)} / ${bs(item.montoTotal)}</div>
-                                    <div style="font-size:12px;color:var(--text-soft);">${item.porcentaje.toFixed(1)}% pagado</div>
+                                    <div style="font-size:12px;color:var(--text-soft);">Saldo: ${bs(item.saldoPendiente)}</div>
                                 </div>
                             </div>
                             <div style="margin-top:8px;height:8px;background:var(--gantt-bg);border-radius:4px;overflow:hidden;">
-                                <div style="height:100%;border-radius:4px;background:${item.porcentaje >= 100 ? 'var(--gantt-active)' : 'var(--accent)'};width:${item.porcentaje}%;transition:width 0.5s ease;"></div>
+                                <div style="height:100%;border-radius:4px;background:${item.porcentaje >= 80 ? 'var(--gantt-active)' : 'var(--accent)'};width:${item.porcentaje}%;transition:width 0.5s ease;"></div>
                             </div>
                             ${item.pagos.length ? `
                                 <div class="payment-history" style="margin-top:8px;">
@@ -1310,10 +1454,11 @@
                                 <button class="btn btn-sm btn-ghost" onclick="S.view='pagos';render();">Ver todos los pagos</button>
                             </div>
                         </div>
-                    `).join('') : `<div class="empty">${ICONS.empty}<div>No hay cotizaciones aceptadas aún.</div></div>`}
+                    `).join('') : `<div class="empty" style="padding:20px;">${ICONS.empty}<div>🎉 No hay cotizaciones aceptadas pendientes de pago.</div></div>`}
                 </div>
             </div>
 
+            <!-- Resumen hoja de vida -->
             <div class="panel">
                 <div class="panel-h"><h3>📋 Resumen de hoja de vida</h3></div>
                 <div class="panel-body">
@@ -1777,7 +1922,7 @@
                             </div>
                             <div class="field">
                                 <label>Saldo pendiente</label>
-                                <input value="${bs(saldoPendiente)}" disabled style="background:#f5f5f5;" style="font-weight:bold;color:var(--primary);">
+                                <input value="${bs(saldoPendiente)}" disabled style="background:#f5f5f5;font-weight:bold;color:var(--primary);">
                             </div>
                         </div>
                         <div class="row2">
@@ -1855,7 +2000,6 @@
                 S.pagos.push(nuevoPago);
                 await savePagos(S.user?.uid);
                 
-                // Actualizar el estado de la cotización si está completamente pagada
                 const totalPagadoActualizado = S.pagos.filter(p => p.cotizacionId === cotizacionId).reduce((s, p) => s + Number(p.montoPagado || 0), 0);
                 if (totalPagadoActualizado >= montoTotal - 0.01) {
                     toast('🎉 ¡Cotización completamente pagada!');
