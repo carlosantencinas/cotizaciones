@@ -12,12 +12,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-firestore-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Librería para generar Word -->
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.2.3/build/index.min.js"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         /* ============================================================
-           ESTILOS COMPLETOS
+           ESTILOS COMPLETOS (manteniendo los existentes)
            ============================================================ */
         :root {
             --bg: #F2F0EB;
@@ -202,6 +204,8 @@
         .btn-sm { padding: 6px 12px; font-size: 12px; }
         .btn-success { background: #27AE60; color: #fff; }
         .btn-success:hover { background: #219A52; }
+        .btn-word { background: #2B579A; color: #fff; }
+        .btn-word:hover { background: #1A3F6E; }
 
         .login-container {
             display: flex;
@@ -865,7 +869,7 @@
                 <div class="email" id="user-email">usuario@email.com</div>
                 <button class="logout-btn" id="btn-logout">Cerrar sesión</button>
             </div>
-            <div class="nav-foot mono">RNI 28.106 · v3.0</div>
+            <div class="nav-foot mono">RNI 28.106 · v3.1</div>
         </aside>
         <main id="main"></main>
     </div>
@@ -967,13 +971,17 @@
             user: null,
             editingCV: false,
             exportarSoloCertificados: false,
-            // Filtros para cotizaciones
+            // Referencias laborales
+            referencias: [
+                { contratante: 'CONSULTORA Y CONSTRUCTORA ANFAYA', supervisor: 'PEDRO JESUS QUISPE', cargo: 'RESPONSABLE', telefono: '76112087' },
+                { contratante: 'FONDO PRODUCTIVO Y SOCIAL FPS CHUQUISACA', supervisor: 'FELICIDAD ALMENDRAS C.', cargo: 'FISCAL DE PROYECTOS', telefono: '77135608' },
+                { contratante: 'ROES CONSULTORES', supervisor: 'RODRIGO UZQUEDA SEGOVIA', cargo: 'REPRESENTANTE LEGAL', telefono: '72972874' }
+            ],
+            // Filtros
             cotFilters: { fecha: '', cliente: '', estado: '' },
             cotSort: { column: null, direction: 'asc' },
-            // Filtros para pagos
             pagoFilters: { fecha: '', cliente: '', estado: '' },
             pagoSort: { column: null, direction: 'asc' },
-            // Filtros para experiencia
             expFilters: { entidad: '', objeto: '', cargo: '', desde: '', hasta: '' },
             expSort: { column: null, direction: 'asc' }
         };
@@ -995,6 +1003,7 @@
             copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
             excel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M8 12l3 3-3 3M14 12l-3 3 3 3"/></svg>',
             upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16v-6m0 0-3 3m3-3 3 3M4 16v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg>',
+            word: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>',
             empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>'
         };
 
@@ -1186,6 +1195,10 @@
                 S.datosPersonales = dp ? JSON.parse(dp) : null;
             } catch (e) { S.datosPersonales = null; }
             try {
+                const refs = await cloudGet(userId, 'referencias');
+                if (refs) S.referencias = JSON.parse(refs);
+            } catch (e) { S.referencias = []; }
+            try {
                 const cfg = await cloudGet(userId, 'config');
                 if (cfg) S.config = { ...DEFAULT_CONFIG, ...JSON.parse(cfg) };
             } catch (e) {}
@@ -1200,6 +1213,14 @@
                 S.datosPersonales = { nombre: '', ci: '', lugarExpedicion: '', fechaNacimiento: '', nacionalidad: '', profesion: '', registroProfesional: '' };
                 await saveDatosPersonales(userId);
             }
+            if (S.referencias === null || S.referencias.length === 0) {
+                S.referencias = [
+                    { contratante: 'CONSULTORA Y CONSTRUCTORA ANFAYA', supervisor: 'PEDRO JESUS QUISPE', cargo: 'RESPONSABLE', telefono: '76112087' },
+                    { contratante: 'FONDO PRODUCTIVO Y SOCIAL FPS CHUQUISACA', supervisor: 'FELICIDAD ALMENDRAS C.', cargo: 'FISCAL DE PROYECTOS', telefono: '77135608' },
+                    { contratante: 'ROES CONSULTORES', supervisor: 'RODRIGO UZQUEDA SEGOVIA', cargo: 'REPRESENTANTE LEGAL', telefono: '72972874' }
+                ];
+                await saveReferencias(userId);
+            }
             if (S.config.logo) {
                 document.getElementById('brand-stamp').innerHTML = `<img src="${S.config.logo}" alt="logo">`;
             }
@@ -1212,6 +1233,7 @@
         async function saveFormacion(userId) { await cloudSet(userId || S.user?.uid, 'formacion', JSON.stringify(S.formacion)); }
         async function saveCursos(userId) { await cloudSet(userId || S.user?.uid, 'cursos', JSON.stringify(S.cursos)); }
         async function saveDatosPersonales(userId) { await cloudSet(userId || S.user?.uid, 'datosPersonales', JSON.stringify(S.datosPersonales)); }
+        async function saveReferencias(userId) { await cloudSet(userId || S.user?.uid, 'referencias', JSON.stringify(S.referencias)); }
         async function saveConfig(userId) { await cloudSet(userId || S.user?.uid, 'config', JSON.stringify(S.config)); }
 
         function toast(msg) {
@@ -1427,11 +1449,9 @@
             const totalExperiencia = exp.reduce((s, e) => s + Number(e.monto || 0), 0);
             const edad = calcularEdad(S.datosPersonales.fechaNacimiento);
 
-            // Pagos sin cotización asociada
             const pagosSinCotizacion = pagos.filter(p => !p.cotizacionId || !cots.some(c => c.id === p.cotizacionId));
             const totalPagosSinCotizacion = pagosSinCotizacion.reduce((s, p) => s + Math.max(0, Number(p.monto) - Number(p.montoPagado || 0)), 0);
 
-            // Avance de pagos
             const cotizacionesAceptadas = cots.filter(c => c.estado === 'aceptada');
             const avancePagos = cotizacionesAceptadas.map(c => {
                 const montoTotal = cotTotal(c);
@@ -1590,7 +1610,7 @@
         }
 
         // ============================================================
-        // VIEWS - COTIZACIONES (COMPLETA)
+        // VIEWS - COTIZACIONES
         // ============================================================
         function viewCotizaciones() {
             const rows = applyCotFiltersAndSort(S.cotizaciones);
@@ -1655,7 +1675,7 @@
         }
 
         // ============================================================
-        // VIEWS - PAGOS (COMPLETA)
+        // VIEWS - PAGOS
         // ============================================================
         function viewPagos() {
             const rows = applyPagoFiltersAndSort(S.pagos);
@@ -1753,7 +1773,7 @@
         }
 
         // ============================================================
-        // VIEWS - EXPERIENCIA (COMPLETA)
+        // VIEWS - EXPERIENCIA (con botones de Word)
         // ============================================================
         function viewExperiencia() {
             const rows = applyExpFiltersAndSort(S.experiencia);
@@ -1787,6 +1807,8 @@
                 <div><p class="eyebrow">Portafolio</p><h1>Experiencia profesional</h1><p>Registro de proyectos ejecutados con hoja de vida completa y diagrama de Gantt configurable.</p></div>
                 <div class="page-actions">
                     <button class="btn btn-success" id="btn-export-excel">${ICONS.excel} Exportar hoja de vida</button>
+                    <button class="btn btn-word" id="btn-export-a5">${ICONS.word} Exportar A-5/A-7</button>
+                    <button class="btn btn-word" id="btn-export-participacion">${ICONS.word} Exportar Participación</button>
                     <button class="btn btn-primary" id="btn-import-excel">${ICONS.upload} Importar Excel</button>
                     <button class="btn btn-primary" id="btn-edit-cv">${ICONS.edit} Editar hoja de vida</button>
                     <button class="btn btn-primary" id="btn-new-exp">${ICONS.plus} Agregar proyecto</button>
@@ -2081,7 +2103,833 @@
         }
 
         // ============================================================
-        // MODALES - COTIZACIONES (COMPLETA)
+        // FUNCIONES DE EXPORTACIÓN A WORD
+        // ============================================================
+        async function exportA5() {
+            // Verificar que la librería docx esté disponible
+            if (typeof docx === 'undefined') {
+                toast('⏳ La librería de Word aún está cargando. Intenta de nuevo en unos segundos.');
+                return;
+            }
+
+            // Mostrar modal para seleccionar A-5 o A-7 y cargo
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:500px;">
+                    <div class="modal-h">
+                        <h3>📄 Exportar Formulario</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <label>Tipo de formulario</label>
+                            <select id="a5-tipo">
+                                <option value="A-5">Formulario A-5</option>
+                                <option value="A-7">Formulario A-7</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Cargo específico</label>
+                            <input id="a5-cargo" value="ESPECIALISTA EN RECURSOS HIDRICOS" placeholder="Ej. ESPECIALISTA EN RECURSOS HIDRICOS">
+                        </div>
+                        <div class="field">
+                            <label>Entidad contratante (para declaración)</label>
+                            <input id="a5-entidad" placeholder="Ej. GOBIERNO AUTONOMO MUNICIPAL DE SANTA CRUZ" value="ASOCIACION ACCIDENTAL ECOGREEN Y ASOCIADOS">
+                        </div>
+                        <div class="field">
+                            <label>Proyecto (para declaración)</label>
+                            <input id="a5-proyecto" placeholder="Ej. PLAN DE MANEJO DEL ÁREA PROTEGIDA" value="CONSULTORÍA POR PRODUCTO PARA LA ELABORACIÓN DEL PLAN DE MANEJO DEL ÁREA PROTEGIDA 'PARQUE METROPOLITANO DE PROTECCIÓN ECOLÓGICA DEL RIO PIRAI'">
+                        </div>
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-word" id="m-generate">📄 Generar Word</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) overlay.remove();
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            overlay.querySelector('#m-generate').onclick = async () => {
+                const tipo = overlay.querySelector('#a5-tipo').value;
+                const cargo = overlay.querySelector('#a5-cargo').value.trim() || 'ESPECIALISTA EN RECURSOS HIDRICOS';
+                const entidad = overlay.querySelector('#a5-entidad').value.trim() || 'ASOCIACION ACCIDENTAL ECOGREEN Y ASOCIADOS';
+                const proyecto = overlay.querySelector('#a5-proyecto').value.trim() || 'CONSULTORÍA POR PRODUCTO PARA LA ELABORACIÓN DEL PLAN DE MANEJO DEL ÁREA PROTEGIDA "PARQUE METROPOLITANO DE PROTECCIÓN ECOLÓGICA DEL RIO PIRAI"';
+                closeModal();
+                await generarWordA5(tipo, cargo, entidad, proyecto);
+            };
+        }
+
+        async function generarWordA5(tipo, cargo, entidad, proyecto) {
+            try {
+                const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, WidthType, AlignmentType, HeadingLevel, TabStopPosition, TabStopType } = docx;
+
+                const doc = new Document({
+                    sections: [{
+                        properties: {},
+                        children: [
+                            // TÍTULO
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `FORMULARIO ${tipo}`, bold: true, size: 28, font: 'Arial' })
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { after: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'HOJA DE VIDA DEL ESPECIALISTA', bold: true, size: 24, font: 'Arial' })
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { after: 400 }
+                            }),
+
+                            // 1. DATOS GENERALES
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '1. DATOS GENERALES', bold: true, size: 18, font: 'Arial' })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+
+                            // Tabla de datos personales
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nombre Completo', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ':', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Paterno', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.nombre ? S.datosPersonales.nombre.split(' ')[0] || '' : '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Materno', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.nombre ? S.datosPersonales.nombre.split(' ')[1] || '' : '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nombre(s)', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.nombre || '', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Cédula de Identidad', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ':', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Número', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.ci || '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Lugar de Expedición', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.lugarExpedicion || '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Edad', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ':', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: calcularEdad(S.datosPersonales.fechaNacimiento) || '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'años', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nacionalidad', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ':', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.nacionalidad || 'BOLIVIANA', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Profesión', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ':', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.profesion || 'INGENIERO CIVIL', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Número de Registro Profesional', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ':', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `R.N.I.: ${S.datosPersonales.registroProfesional || '28106'}`, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    })
+                                ]
+                            }),
+
+                            // 2. FORMACIÓN ACADÉMICA
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '2. FORMACIÓN ACADÉMICA', bold: true, size: 18, font: 'Arial' })
+                                ],
+                                spacing: { before: 200, after: 200 }
+                            }),
+
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Universidad / Institución', bold: true, size: 16 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Fechas', bold: true, size: 16 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Grado Académico', bold: true, size: 16 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Título en Provisión Nacional', bold: true, size: 16 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    // Datos de formación
+                                    ...S.formacion.map(f => {
+                                        const desde = f.desde ? new Date(f.desde + 'T00:00:00') : null;
+                                        const hasta = f.hasta ? new Date(f.hasta + 'T00:00:00') : null;
+                                        const desdeStr = desde ? desde.toLocaleDateString('es-BO', { month: 'short', year: 'numeric' }).toUpperCase() : '';
+                                        const hastaStr = hasta ? hasta.toLocaleDateString('es-BO', { month: 'short', year: 'numeric' }).toUpperCase() : '';
+                                        const titulo = f.titulo ? fmtDateExcel(f.titulo) : '';
+                                        return new TableRow({
+                                            children: [
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: f.institucion || '', size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: desdeStr, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: hastaStr, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: f.grado || '', size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: titulo, size: 14 })], spacing: { after: 0 } })] })
+                                            ]
+                                        });
+                                    })
+                                ]
+                            }),
+
+                            // 3. CURSOS DE ESPECIALIZACIÓN
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '3. CURSOS DE ESPECIALIZACIÓN', bold: true, size: 18, font: 'Arial' })
+                                ],
+                                spacing: { before: 200, after: 200 }
+                            }),
+
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Universidad / Institución', bold: true, size: 16 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Fechas', bold: true, size: 16 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nombre del Curso', bold: true, size: 16 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Duración en Horas', bold: true, size: 16 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    ...S.cursos.map(c => {
+                                        const desde = c.desde ? new Date(c.desde + 'T00:00:00') : null;
+                                        const hasta = c.hasta ? new Date(c.hasta + 'T00:00:00') : null;
+                                        const desdeStr = desde ? desde.toLocaleDateString('es-BO', { month: 'short', year: 'numeric' }).toUpperCase() : '';
+                                        const hastaStr = hasta ? hasta.toLocaleDateString('es-BO', { month: 'short', year: 'numeric' }).toUpperCase() : '';
+                                        return new TableRow({
+                                            children: [
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: c.institucion || '', size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: desdeStr, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: hastaStr, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: c.curso || '', size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(c.horas || 0), size: 14 })], spacing: { after: 0 } })] })
+                                            ]
+                                        });
+                                    })
+                                ]
+                            }),
+
+                            // 4. EXPERIENCIA EN CONSULTORÍAS
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '4. EXPERIENCIA EN CONSULTORÍAS EN GENERAL', bold: true, size: 18, font: 'Arial' })
+                                ],
+                                spacing: { before: 200, after: 200 }
+                            }),
+
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'N°', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Entidad / Empresa', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Objeto de la Consultoría', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Monto de la Consultoría (Bs.)', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Cargo', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Desde', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Hasta', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '# Folio del Respaldo', bold: true, size: 14 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    ...S.experiencia.map((e, i) => {
+                                        const monto = Number(e.monto || 0).toFixed(2);
+                                        return new TableRow({
+                                            children: [
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(i + 1), size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.entidad || '', size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.objeto || '', size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: monto, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: cargo, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: fmtDateExcel(e.desde), size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.enCurso ? 'En curso' : fmtDateExcel(e.hasta), size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 14 })], spacing: { after: 0 } })] })
+                                            ]
+                                        });
+                                    })
+                                ]
+                            }),
+
+                            // 5. EXPERIENCIA EN EL CARGO (si es A-5)
+                            ...(tipo === 'A-5' ? [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({ text: '5. EXPERIENCIA EN EL CARGO EN CONSULTORÍAS ESPECÍFICAS', bold: true, size: 18, font: 'Arial' })
+                                    ],
+                                    spacing: { before: 200, after: 200 }
+                                }),
+                                new Table({
+                                    rows: [
+                                        new TableRow({
+                                            children: [
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'N°', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Entidad / Empresa', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Objeto de la Consultoría', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Monto de la Consultoría (Bs.)', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Cargo', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Desde', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Hasta', bold: true, size: 14 })], spacing: { after: 0 } })] })
+                                            ]
+                                        }),
+                                        ...S.experiencia.slice(0, 10).map((e, i) => {
+                                            const monto = Number(e.monto || 0).toFixed(2);
+                                            return new TableRow({
+                                                children: [
+                                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(i + 1), size: 14 })], spacing: { after: 0 } })] }),
+                                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.entidad || '', size: 14 })], spacing: { after: 0 } })] }),
+                                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.objeto || '', size: 14 })], spacing: { after: 0 } })] }),
+                                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: monto, size: 14 })], spacing: { after: 0 } })] }),
+                                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: cargo, size: 14 })], spacing: { after: 0 } })] }),
+                                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: fmtDateExcel(e.desde), size: 14 })], spacing: { after: 0 } })] }),
+                                                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.enCurso ? 'En curso' : fmtDateExcel(e.hasta), size: 14 })], spacing: { after: 0 } })] })
+                                                ]
+                                            });
+                                        })
+                                    ]
+                                })
+                            ] : []),
+
+                            // DECLARACIÓN JURADA
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'DECLARACIÓN JURADA', bold: true, size: 18, font: 'Arial' })
+                                ],
+                                spacing: { before: 200, after: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `Yo, ${S.datosPersonales.nombre || 'CARLOS ANDRES ANTEQUERA ENCINAS'} con C.I. N° ${S.datosPersonales.ci || '7503322'} CH, de nacionalidad ${S.datosPersonales.nacionalidad || 'BOLIVIANO'} me comprometo a prestar mis servicios profesionales para desempeñar la función de ${cargo}, únicamente con ${entidad}, en caso que se suscriba el contrato para ${proyecto} con la entidad correspondiente. Asimismo, confirmo que tengo pleno dominio hablado y escrito del idioma castellano.`, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `El Representante Legal del proponente, ha verificado que el profesional propuesto sólo se presenta con esta propuesta. De encontrarse propuestos sus servicios en otra propuesta para la misma contratación, asumo la descalificación de la presente propuesta.`, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `Lugar y fecha: SANTA CRUZ DE LA SIERRA, ${new Date().toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()}`, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'NOTA.- Toda la información contenida en este formulario es una declaración jurada. En caso de adjudicación el proponente se compromete a presentar los certificados o documentos que respalden la información detalla, en original o fotocopia legalizada.', size: 14, font: 'Arial', italics: true })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '(Este formulario deberá ser presentado para cada uno de los profesionales propuestos).', size: 14, font: 'Arial', italics: true })
+                                ],
+                                spacing: { after: 400 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `ING. ${S.datosPersonales.nombre || 'CARLOS ANDRES ANTEQUERA ENCINAS'}`, bold: true, size: 18, font: 'Arial' })
+                                ],
+                                alignment: AlignmentType.CENTER
+                            })
+                        ]
+                    }]
+                });
+
+                const blob = await Packer.toBlob(doc);
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `Formulario_${tipo}_${S.datosPersonales.nombre || 'Antequera'}_${new Date().toISOString().slice(0,10)}.docx`;
+                link.click();
+                toast('✅ Documento Word generado correctamente.');
+            } catch (e) {
+                console.error(e);
+                toast('❌ Error al generar el documento: ' + e.message);
+            }
+        }
+
+        async function exportParticipacion() {
+            if (typeof docx === 'undefined') {
+                toast('⏳ La librería de Word aún está cargando. Intenta de nuevo en unos segundos.');
+                return;
+            }
+
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:640px;">
+                    <div class="modal-h">
+                        <h3>📄 Exportar Formulario de Participación</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <label>Cargo específico</label>
+                            <input id="part-cargo" value="ESPECIALISTA EN RECURSOS HIDRICOS" placeholder="Ej. ESPECIALISTA EN RECURSOS HIDRICOS">
+                        </div>
+                        <div class="field">
+                            <label>Dirección</label>
+                            <input id="part-direccion" value="Abel Benavidez Nº4, Sucre" placeholder="Dirección completa">
+                        </div>
+                        <div class="field">
+                            <label>Teléfono</label>
+                            <input id="part-telefono" value="73420716" placeholder="Teléfono">
+                        </div>
+                        <div class="field">
+                            <label>Correo electrónico</label>
+                            <input id="part-email" value="carlosantencinas@gmail.com" placeholder="Correo electrónico">
+                        </div>
+                        <div class="field">
+                            <label>Referencias laborales</label>
+                            <div id="referencias-container">
+                                ${S.referencias.map((ref, i) => `
+                                    <div class="row4" style="margin-bottom:8px;align-items:center;" data-ref-idx="${i}">
+                                        <input value="${attr(ref.contratante)}" placeholder="Contratante" class="ref-contratante">
+                                        <input value="${attr(ref.supervisor)}" placeholder="Supervisor" class="ref-supervisor">
+                                        <input value="${attr(ref.cargo)}" placeholder="Cargo" class="ref-cargo">
+                                        <input value="${attr(ref.telefono)}" placeholder="Teléfono" class="ref-telefono">
+                                        <button class="btn btn-sm btn-danger ref-remove" style="padding:4px 8px;">✕</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="btn btn-sm btn-ghost" id="part-add-ref">+ Agregar referencia</button>
+                        </div>
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-word" id="m-generate">📄 Generar Word</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) overlay.remove();
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            // Agregar referencia
+            overlay.querySelector('#part-add-ref').onclick = () => {
+                const container = overlay.querySelector('#referencias-container');
+                const div = document.createElement('div');
+                div.className = 'row4';
+                div.style.marginBottom = '8px';
+                div.style.alignItems = 'center';
+                div.innerHTML = `
+                    <input placeholder="Contratante" class="ref-contratante">
+                    <input placeholder="Supervisor" class="ref-supervisor">
+                    <input placeholder="Cargo" class="ref-cargo">
+                    <input placeholder="Teléfono" class="ref-telefono">
+                    <button class="btn btn-sm btn-danger ref-remove" style="padding:4px 8px;">✕</button>
+                `;
+                container.appendChild(div);
+            };
+
+            // Eliminar referencia
+            overlay.querySelector('#referencias-container').addEventListener('click', (e) => {
+                if (e.target.classList.contains('ref-remove')) {
+                    const row = e.target.closest('.row4');
+                    if (overlay.querySelectorAll('#referencias-container .row4').length > 1) {
+                        row.remove();
+                    } else {
+                        toast('Debe haber al menos una referencia.');
+                    }
+                }
+            });
+
+            overlay.querySelector('#m-generate').onclick = async () => {
+                const cargo = overlay.querySelector('#part-cargo').value.trim() || 'ESPECIALISTA EN RECURSOS HIDRICOS';
+                const direccion = overlay.querySelector('#part-direccion').value.trim() || 'Abel Benavidez Nº4, Sucre';
+                const telefono = overlay.querySelector('#part-telefono').value.trim() || '73420716';
+                const email = overlay.querySelector('#part-email').value.trim() || 'carlosantencinas@gmail.com';
+
+                // Obtener referencias
+                const referencias = [];
+                overlay.querySelectorAll('#referencias-container .row4').forEach(row => {
+                    const contratante = row.querySelector('.ref-contratante').value.trim();
+                    const supervisor = row.querySelector('.ref-supervisor').value.trim();
+                    const cargoRef = row.querySelector('.ref-cargo').value.trim();
+                    const telefonoRef = row.querySelector('.ref-telefono').value.trim();
+                    if (contratante) {
+                        referencias.push({ contratante, supervisor, cargo: cargoRef, telefono: telefonoRef });
+                    }
+                });
+
+                // Guardar referencias en Firebase
+                S.referencias = referencias;
+                await saveReferencias(S.user?.uid);
+
+                closeModal();
+                await generarWordParticipacion(cargo, direccion, telefono, email, referencias);
+            };
+        }
+
+        async function generarWordParticipacion(cargo, direccion, telefono, email, referencias) {
+            try {
+                const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType } = docx;
+
+                const doc = new Document({
+                    sections: [{
+                        properties: {},
+                        children: [
+                            // Título
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'FORMULARIO DE PARTICIPACIÓN', bold: true, size: 28, font: 'Arial' })
+                                ],
+                                alignment: AlignmentType.CENTER,
+                                spacing: { after: 400 }
+                            }),
+
+                            // Texto introductorio
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'Luego de examinar la documentación de la invitación, la cual declaro aceptar y conocer, presento mi participación para realizar el servicio de consultoría de acuerdo con las características, requerimientos y plazos detallados en los Términos de Referencia.', size: 18, font: 'Arial' })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'Para el efecto presento mi hoja de vida debidamente firmada y fechada.', size: 18, font: 'Arial' })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+
+                            // Tabla de datos personales
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nombre completo:', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.nombre || 'CARLOS ANDRES ANTEQUERA ENCINAS', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Lugar y fecha de nacimiento:', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Sucre, ${S.datosPersonales.fechaNacimiento ? new Date(S.datosPersonales.fechaNacimiento + 'T00:00:00').toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' }) : '07 de marzo de 1990'}`, size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nacionalidad:', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: S.datosPersonales.nacionalidad || 'Boliviana', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'N° Cédula de Identidad o Pasaporte y lugar de expedición:', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${S.datosPersonales.ci || '7503322'} ${S.datosPersonales.lugarExpedicion || 'Chuquisaca'}`, size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'País de residencia:', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Bolivia', size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Dirección:', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: direccion, size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Teléfono:', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: telefono, size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Correo electrónico:', bold: true, size: 18 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: email, size: 18 })], spacing: { after: 0 } })] })
+                                        ]
+                                    })
+                                ]
+                            }),
+
+                            // 1. FORMACIÓN
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '1. FORMACIÓN [PROFESIONAL].', bold: true, size: 20, font: 'Arial' })
+                                ],
+                                spacing: { before: 300, after: 200 }
+                            }),
+
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Estudios realizados', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Especialidad o área', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Entidad educativa/ Universidad', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Fecha de emisión del título (Mes/Año)', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Aspectos detallados por el participante', bold: true, size: 14 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    ...S.formacion.map(f => {
+                                        const tituloFecha = f.titulo ? fmtDateExcel(f.titulo) : '';
+                                        return new TableRow({
+                                            children: [
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: f.grado || '', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: f.institucion || '', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: f.institucion || '', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: tituloFecha, size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '', size: 13 })], spacing: { after: 0 } })] })
+                                            ]
+                                        });
+                                    })
+                                ]
+                            }),
+
+                            // CURSOS DE ESPECIALIZACIÓN
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'CURSOS DE ESPECIALIZACIÓN', bold: true, size: 18, font: 'Arial' })
+                                ],
+                                spacing: { before: 200, after: 200 }
+                            }),
+
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Universidad / Institución', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Desde', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Hasta', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nombre del Curso', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Duración en Horas', bold: true, size: 14 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    ...S.cursos.map(c => {
+                                        const desde = c.desde ? new Date(c.desde + 'T00:00:00') : null;
+                                        const hasta = c.hasta ? new Date(c.hasta + 'T00:00:00') : null;
+                                        const desdeStr = desde ? desde.toLocaleDateString('es-BO', { month: 'short', year: 'numeric' }).toUpperCase() : '';
+                                        const hastaStr = hasta ? hasta.toLocaleDateString('es-BO', { month: 'short', year: 'numeric' }).toUpperCase() : '';
+                                        return new TableRow({
+                                            children: [
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: c.institucion || '', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: desdeStr, size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: hastaStr, size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: c.curso || '', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(c.horas || 0), size: 13 })], spacing: { after: 0 } })] })
+                                            ]
+                                        });
+                                    })
+                                ]
+                            }),
+
+                            // 2. EXPERIENCIA
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '2. EXPERIENCIA', bold: true, size: 20, font: 'Arial' })
+                                ],
+                                spacing: { before: 300, after: 200 }
+                            }),
+
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '2.1. EXPERIENCIA [PROFESIONAL] GENERAL.', bold: true, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Fecha de emisión del título (día/mes/año)', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tiempo desde la emisión del título', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Aspectos detallados por el participante', bold: true, size: 14 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '15/03/2013', size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${new Date().getFullYear() - 2013} años`, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Data ${new Date().getFullYear() - 2013} años de la obtención del título académico y en provisión nacional como ingeniero civil`, size: 14 })], spacing: { after: 0 } })] })
+                                        ]
+                                    })
+                                ]
+                            }),
+
+                            // 2.2. Experiencia Específica
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '2.2. Experiencia [PROFESIONAL] Específica.', bold: true, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { before: 200, after: 200 }
+                            }),
+
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Contratante o entidad', bold: true, size: 13 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Objeto de la consultoría', bold: true, size: 13 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Cargo en el proyecto', bold: true, size: 13 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Descripción del trabajo realizado', bold: true, size: 13 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Desde', bold: true, size: 13 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Hasta', bold: true, size: 13 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    ...S.experiencia.slice(0, 15).map(e => {
+                                        return new TableRow({
+                                            children: [
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.entidad || '', size: 12 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.objeto || '', size: 12 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: cargo, size: 12 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Responsable del diseño Hidrológico e hidráulico`, size: 12 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: fmtDateExcel(e.desde), size: 12 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: e.enCurso ? 'En curso' : fmtDateExcel(e.hasta), size: 12 })], spacing: { after: 0 } })] })
+                                            ]
+                                        });
+                                    })
+                                ]
+                            }),
+
+                            // 3. REFERENCIAS LABORALES
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '3. REFERENCIAS LABORALES.', bold: true, size: 18, font: 'Arial' })
+                                ],
+                                spacing: { before: 300, after: 200 }
+                            }),
+
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'Detalle las referencias labores correspondientes a las tres últimas instituciones donde trabajó:', size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Contratante', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nombre del supervisor', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Cargo', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Correo electrónico', bold: true, size: 14 })], spacing: { after: 0 } })] }),
+                                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Teléfono', bold: true, size: 14 })], spacing: { after: 0 } })] })
+                                        ]
+                                    }),
+                                    ...(referencias || S.referencias).map(ref => {
+                                        return new TableRow({
+                                            children: [
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ref.contratante || '', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ref.supervisor || '', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ref.cargo || '', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '--', size: 13 })], spacing: { after: 0 } })] }),
+                                                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ref.telefono || '', size: 13 })], spacing: { after: 0 } })] })
+                                            ]
+                                        });
+                                    })
+                                ]
+                            }),
+
+                            // Declaración final
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'Entiendo y reconozco que el Contratante no está obligado a aceptar la presente participación y que la selección del Consultor para el presente servicio de consultoría se basará en la mejor calificación de antecedentes académicos y de experiencia.', size: 16, font: 'Arial' })
+                                ],
+                                spacing: { before: 300, after: 300 }
+                            }),
+
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: 'Firma del participante:', bold: true, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: '', size: 16 })
+                                ],
+                                spacing: { after: 300 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `Nombre completo: ${S.datosPersonales.nombre || 'CARLOS ANDRES ANTEQUERA ENCINAS'}`, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `NIT: ${S.datosPersonales.ci ? S.datosPersonales.ci + '010' : '7503322010'}`, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 100 }
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: `Fecha: ${new Date().toLocaleDateString('es-BO', { day: 'numeric', month: 'long', year: 'numeric' })}`, size: 16, font: 'Arial' })
+                                ],
+                                spacing: { after: 100 }
+                            })
+                        ]
+                    }]
+                });
+
+                const blob = await Packer.toBlob(doc);
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `Formulario_Participacion_${S.datosPersonales.nombre || 'Antequera'}_${new Date().toISOString().slice(0,10)}.docx`;
+                link.click();
+                toast('✅ Documento Word generado correctamente.');
+            } catch (e) {
+                console.error(e);
+                toast('❌ Error al generar el documento: ' + e.message);
+            }
+        }
+
+        // ============================================================
+        // MODALES - COTIZACIONES
         // ============================================================
         function openCotModal(cot) {
             const isNew = !cot;
@@ -2594,7 +3442,7 @@
         }
 
         // ============================================================
-        // MODALES - EXPERIENCIA (con "En curso" y certificado)
+        // MODALES - EXPERIENCIA
         // ============================================================
         function openExpModal(exp) {
             const isNew = !exp;
@@ -2667,7 +3515,6 @@
             `;
             document.body.appendChild(overlay);
 
-            // Toggle para "En curso"
             const enCursoCheck = overlay.querySelector('#e-en-curso');
             const hastaInput = overlay.querySelector('#e-hasta');
             const hastaField = hastaInput.closest('.field');
@@ -2714,13 +3561,273 @@
         }
 
         // ============================================================
-        // EXPORTAR HOJA DE VIDA (con opción de solo certificados)
+        // IMPORTAR EXCEL
+        // ============================================================
+        function openImportModal() {
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:700px;">
+                    <div class="modal-h">
+                        <h3>📥 Importar experiencia desde Excel</h3>
+                        <button class="close" id="m-close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="field">
+                            <label>Formato esperado</label>
+                            <div style="background:var(--gantt-bg);padding:12px;border-radius:var(--radius);font-size:12px;font-family:monospace;">
+                                <strong>Columnas requeridas:</strong><br>
+                                Entidad | Objeto | Monto | Cargo | Desde | Hasta<br>
+                                <span style="color:var(--text-soft);">(Fechas: DD/MM/YYYY, DD-MM-YYYY, o YYYY-MM-DD)</span>
+                            </div>
+                        </div>
+                        <div class="file-upload-area" id="file-drop-area">
+                            <div class="icon">📂</div>
+                            <div class="text">Arrastra un archivo Excel (.xlsx, .xls) o haz clic para seleccionar</div>
+                            <div class="sub">Soporta archivos .xlsx y .xls</div>
+                            <input type="file" id="file-input" accept=".xlsx,.xls">
+                        </div>
+                        <div id="import-preview" style="display:none;margin-top:12px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                <span id="import-count" style="font-weight:600;"></span>
+                                <span style="font-size:12px;color:var(--text-soft);" id="import-status"></span>
+                            </div>
+                            <div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);" id="import-table-container"></div>
+                        </div>
+                    </div>
+                    <div class="modal-foot">
+                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
+                        <button class="btn btn-success" id="btn-import-confirm" disabled>✅ Importar datos</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            let importedData = [];
+
+            const closeModal = () => {
+                if (overlay && overlay.parentNode) overlay.remove();
+            };
+
+            overlay.querySelector('#m-close').onclick = closeModal;
+            overlay.querySelector('#m-cancel').onclick = closeModal;
+            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
+
+            const dropArea = overlay.querySelector('#file-drop-area');
+            const fileInput = overlay.querySelector('#file-input');
+
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.style.borderColor = 'var(--primary)';
+                dropArea.style.background = 'var(--surface-hover)';
+            });
+
+            dropArea.addEventListener('dragleave', () => {
+                dropArea.style.borderColor = 'var(--border)';
+                dropArea.style.background = 'transparent';
+            });
+
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.style.borderColor = 'var(--border)';
+                dropArea.style.background = 'transparent';
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            dropArea.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            function parseDate(value) {
+                if (!value) return null;
+                if (typeof value === 'number' && value > 10000) {
+                    const excelEpoch = new Date(1899, 11, 30);
+                    const date = new Date(excelEpoch.getTime() + value * 86400000);
+                    if (!isNaN(date)) return date.toISOString().slice(0, 10);
+                }
+                const str = String(value).trim();
+                const formats = [
+                    { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, order: ['d', 'm', 'y'] },
+                    { regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/, order: ['d', 'm', 'y'] },
+                    { regex: /^(\d{4})-(\d{1,2})-(\d{1,2})$/, order: ['y', 'm', 'd'] },
+                    { regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/, order: ['d', 'm', 'y'] }
+                ];
+                let d = new Date(str);
+                if (!isNaN(d) && str.includes('-')) {
+                    return d.toISOString().slice(0, 10);
+                }
+                for (const fmt of formats) {
+                    const match = str.match(fmt.regex);
+                    if (match) {
+                        let year, month, day;
+                        const parts = { y: parseInt(match[1]), m: parseInt(match[2]), d: parseInt(match[3]) };
+                        if (parts.y < 100) parts.y += 2000;
+                        if (parts.m > 12 && parts.d <= 12) {
+                            [parts.m, parts.d] = [parts.d, parts.m];
+                        }
+                        year = parts.y;
+                        month = parts.m;
+                        day = parts.d;
+                        if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                            const dateObj = new Date(year, month - 1, day);
+                            if (!isNaN(dateObj)) {
+                                return dateObj.toISOString().slice(0, 10);
+                            }
+                        }
+                    }
+                }
+                d = new Date(str);
+                if (!isNaN(d)) {
+                    return d.toISOString().slice(0, 10);
+                }
+                return null;
+            }
+
+            function handleFile(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                        if (!jsonData || jsonData.length === 0) {
+                            toast('❌ El archivo no contiene datos.');
+                            return;
+                        }
+
+                        const headers = Object.keys(jsonData[0]);
+                        const mapCol = (posible) => {
+                            for (const h of headers) {
+                                if (h.toLowerCase().includes(posible.toLowerCase())) return h;
+                            }
+                            return null;
+                        };
+
+                        const colEntidad = mapCol('entidad') || mapCol('empresa') || headers[0];
+                        const colObjeto = mapCol('objeto') || mapCol('proyecto') || headers[1];
+                        const colMonto = mapCol('monto') || headers[2];
+                        const colCargo = mapCol('cargo') || headers[3];
+                        const colDesde = mapCol('desde') || headers[4];
+                        const colHasta = mapCol('hasta') || headers[5];
+
+                        if (!colEntidad || !colObjeto) {
+                            toast('❌ No se encontraron las columnas "Entidad" y "Objeto". Verifica el formato.');
+                            return;
+                        }
+
+                        importedData = jsonData.map(row => {
+                            const entidad = String(row[colEntidad] || '').trim();
+                            const objeto = String(row[colObjeto] || '').trim();
+                            let monto = 0;
+                            if (colMonto) {
+                                const val = String(row[colMonto] || '0').replace(/[^0-9.,-]/g, '').replace(/,/g, '');
+                                monto = parseFloat(val) || 0;
+                            }
+                            const cargo = colCargo ? String(row[colCargo] || '').trim() : '';
+                            let desde = colDesde ? parseDate(row[colDesde]) : null;
+                            let hasta = colHasta ? parseDate(row[colHasta]) : null;
+                            if (!desde) desde = new Date().toISOString().slice(0, 10);
+                            if (!hasta) hasta = new Date().toISOString().slice(0, 10);
+                            return { entidad, objeto, monto, cargo, desde, hasta };
+                        }).filter(row => row.entidad || row.objeto);
+
+                        mostrarPreview(importedData);
+                        overlay.querySelector('#btn-import-confirm').disabled = importedData.length === 0;
+                    } catch (err) {
+                        toast('❌ Error al leer el archivo: ' + err.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            function mostrarPreview(data) {
+                const container = overlay.querySelector('#import-preview');
+                const tableContainer = overlay.querySelector('#import-table-container');
+                const countSpan = overlay.querySelector('#import-count');
+                const statusSpan = overlay.querySelector('#import-status');
+
+                container.style.display = 'block';
+                countSpan.textContent = `📊 ${data.length} registros encontrados`;
+
+                if (data.length === 0) {
+                    tableContainer.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-soft);">No se encontraron datos válidos.</div>';
+                    statusSpan.textContent = '⚠️ Sin datos válidos';
+                    return;
+                }
+
+                let html = '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
+                html += '<thead><tr style="background:var(--primary);color:#fff;">';
+                html += '<th style="padding:6px 8px;text-align:left;">Entidad</th>';
+                html += '<th style="padding:6px 8px;text-align:left;">Objeto</th>';
+                html += '<th style="padding:6px 8px;text-align:right;">Monto</th>';
+                html += '<th style="padding:6px 8px;text-align:left;">Cargo</th>';
+                html += '<th style="padding:6px 8px;text-align:left;">Desde</th>';
+                html += '<th style="padding:6px 8px;text-align:left;">Hasta</th>';
+                html += '</tr></thead><tbody>';
+
+                data.slice(0, 50).forEach(row => {
+                    html += `<tr style="border-bottom:1px solid var(--border);">`;
+                    html += `<td style="padding:4px 8px;">${esc(row.entidad || '—')}</td>`;
+                    html += `<td style="padding:4px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(row.objeto || '—')}</td>`;
+                    html += `<td style="padding:4px 8px;text-align:right;">${row.monto ? bs(row.monto) : '—'}</td>`;
+                    html += `<td style="padding:4px 8px;">${esc(row.cargo || '—')}</td>`;
+                    html += `<td style="padding:4px 8px;">${row.desde ? fmtDate(row.desde) : '—'}</td>`;
+                    html += `<td style="padding:4px 8px;">${row.hasta ? fmtDate(row.hasta) : '—'}</td>`;
+                    html += '</tr>';
+                });
+
+                if (data.length > 50) {
+                    html += `<tr><td colspan="6" style="padding:8px;text-align:center;color:var(--text-soft);">...y ${data.length - 50} registros más</td></tr>`;
+                }
+
+                html += '</tbody></table>';
+                tableContainer.innerHTML = html;
+                statusSpan.textContent = `✅ ${data.length} registros listos para importar`;
+            }
+
+            overlay.querySelector('#btn-import-confirm').onclick = async () => {
+                if (importedData.length === 0) {
+                    toast('No hay datos para importar.');
+                    return;
+                }
+
+                const nuevos = importedData.map(row => ({
+                    id: uid(),
+                    entidad: row.entidad || 'Sin entidad',
+                    objeto: row.objeto || 'Sin descripción',
+                    monto: row.monto || 0,
+                    cargo: row.cargo || 'Sin cargo',
+                    desde: row.desde || new Date().toISOString().slice(0, 10),
+                    hasta: row.hasta || new Date().toISOString().slice(0, 10),
+                    enCurso: false,
+                    certificado: false
+                }));
+
+                S.experiencia = [...S.experiencia, ...nuevos];
+                await saveExperiencia(S.user?.uid);
+
+                closeModal();
+                render();
+                toast(`✅ ${nuevos.length} proyectos importados exitosamente. Total: ${S.experiencia.length} proyectos.`);
+            };
+        }
+
+        // ============================================================
+        // EXPORTAR HOJA DE VIDA (EXCEL)
         // ============================================================
         function exportHojaVida() {
             try {
                 const wb = XLSX.utils.book_new();
 
-                // Filtrar experiencia según opción
                 let expParaExportar = S.experiencia;
                 if (S.exportarSoloCertificados) {
                     expParaExportar = expParaExportar.filter(e => e.certificado === true);
@@ -3073,6 +4180,13 @@
                 };
             }
 
+            // Botones de exportación a Word
+            const btnA5 = document.getElementById('btn-export-a5');
+            if (btnA5) btnA5.onclick = exportA5;
+
+            const btnParticipacion = document.getElementById('btn-export-participacion');
+            if (btnParticipacion) btnParticipacion.onclick = exportParticipacion;
+
             // Editar hoja de vida
             const btnEditCV = document.getElementById('btn-edit-cv');
             if (btnEditCV) {
@@ -3397,267 +4511,6 @@
                 }
                 render();
                 toast('Configuración guardada.');
-            };
-        }
-
-        // ============================================================
-        // IMPORTAR EXCEL
-        // ============================================================
-        function openImportModal() {
-            const overlay = document.createElement('div');
-            overlay.className = 'overlay';
-            overlay.innerHTML = `
-                <div class="modal" style="max-width:700px;">
-                    <div class="modal-h">
-                        <h3>📥 Importar experiencia desde Excel</h3>
-                        <button class="close" id="m-close">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="field">
-                            <label>Formato esperado</label>
-                            <div style="background:var(--gantt-bg);padding:12px;border-radius:var(--radius);font-size:12px;font-family:monospace;">
-                                <strong>Columnas requeridas:</strong><br>
-                                Entidad | Objeto | Monto | Cargo | Desde | Hasta<br>
-                                <span style="color:var(--text-soft);">(Fechas: DD/MM/YYYY, DD-MM-YYYY, o YYYY-MM-DD)</span>
-                            </div>
-                        </div>
-                        <div class="file-upload-area" id="file-drop-area">
-                            <div class="icon">📂</div>
-                            <div class="text">Arrastra un archivo Excel (.xlsx, .xls) o haz clic para seleccionar</div>
-                            <div class="sub">Soporta archivos .xlsx y .xls</div>
-                            <input type="file" id="file-input" accept=".xlsx,.xls">
-                        </div>
-                        <div id="import-preview" style="display:none;margin-top:12px;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                <span id="import-count" style="font-weight:600;"></span>
-                                <span style="font-size:12px;color:var(--text-soft);" id="import-status"></span>
-                            </div>
-                            <div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);" id="import-table-container"></div>
-                        </div>
-                    </div>
-                    <div class="modal-foot">
-                        <button class="btn btn-ghost" id="m-cancel">Cancelar</button>
-                        <button class="btn btn-success" id="btn-import-confirm" disabled>✅ Importar datos</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-
-            let importedData = [];
-
-            const closeModal = () => {
-                if (overlay && overlay.parentNode) overlay.remove();
-            };
-
-            overlay.querySelector('#m-close').onclick = closeModal;
-            overlay.querySelector('#m-cancel').onclick = closeModal;
-            overlay.addEventListener('mousedown', e => { if (e.target === overlay) closeModal(); });
-
-            const dropArea = overlay.querySelector('#file-drop-area');
-            const fileInput = overlay.querySelector('#file-input');
-
-            dropArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropArea.style.borderColor = 'var(--primary)';
-                dropArea.style.background = 'var(--surface-hover)';
-            });
-
-            dropArea.addEventListener('dragleave', () => {
-                dropArea.style.borderColor = 'var(--border)';
-                dropArea.style.background = 'transparent';
-            });
-
-            dropArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropArea.style.borderColor = 'var(--border)';
-                dropArea.style.background = 'transparent';
-                if (e.dataTransfer.files.length) {
-                    fileInput.files = e.dataTransfer.files;
-                    handleFile(e.dataTransfer.files[0]);
-                }
-            });
-
-            dropArea.addEventListener('click', () => fileInput.click());
-
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length) {
-                    handleFile(e.target.files[0]);
-                }
-            });
-
-            function parseDate(value) {
-                if (!value) return null;
-                if (typeof value === 'number' && value > 10000) {
-                    const excelEpoch = new Date(1899, 11, 30);
-                    const date = new Date(excelEpoch.getTime() + value * 86400000);
-                    if (!isNaN(date)) return date.toISOString().slice(0, 10);
-                }
-                const str = String(value).trim();
-                const formats = [
-                    { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, order: ['d', 'm', 'y'] },
-                    { regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/, order: ['d', 'm', 'y'] },
-                    { regex: /^(\d{4})-(\d{1,2})-(\d{1,2})$/, order: ['y', 'm', 'd'] },
-                    { regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/, order: ['d', 'm', 'y'] }
-                ];
-                let d = new Date(str);
-                if (!isNaN(d) && str.includes('-')) {
-                    return d.toISOString().slice(0, 10);
-                }
-                for (const fmt of formats) {
-                    const match = str.match(fmt.regex);
-                    if (match) {
-                        let year, month, day;
-                        const parts = { y: parseInt(match[1]), m: parseInt(match[2]), d: parseInt(match[3]) };
-                        if (parts.y < 100) parts.y += 2000;
-                        if (parts.m > 12 && parts.d <= 12) {
-                            [parts.m, parts.d] = [parts.d, parts.m];
-                        }
-                        year = parts.y;
-                        month = parts.m;
-                        day = parts.d;
-                        if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-                            const dateObj = new Date(year, month - 1, day);
-                            if (!isNaN(dateObj)) {
-                                return dateObj.toISOString().slice(0, 10);
-                            }
-                        }
-                    }
-                }
-                d = new Date(str);
-                if (!isNaN(d)) {
-                    return d.toISOString().slice(0, 10);
-                }
-                return null;
-            }
-
-            function handleFile(file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-
-                        if (!jsonData || jsonData.length === 0) {
-                            toast('❌ El archivo no contiene datos.');
-                            return;
-                        }
-
-                        const headers = Object.keys(jsonData[0]);
-                        const mapCol = (posible) => {
-                            for (const h of headers) {
-                                if (h.toLowerCase().includes(posible.toLowerCase())) return h;
-                            }
-                            return null;
-                        };
-
-                        const colEntidad = mapCol('entidad') || mapCol('empresa') || headers[0];
-                        const colObjeto = mapCol('objeto') || mapCol('proyecto') || headers[1];
-                        const colMonto = mapCol('monto') || headers[2];
-                        const colCargo = mapCol('cargo') || headers[3];
-                        const colDesde = mapCol('desde') || headers[4];
-                        const colHasta = mapCol('hasta') || headers[5];
-
-                        if (!colEntidad || !colObjeto) {
-                            toast('❌ No se encontraron las columnas "Entidad" y "Objeto". Verifica el formato.');
-                            return;
-                        }
-
-                        importedData = jsonData.map(row => {
-                            const entidad = String(row[colEntidad] || '').trim();
-                            const objeto = String(row[colObjeto] || '').trim();
-                            let monto = 0;
-                            if (colMonto) {
-                                const val = String(row[colMonto] || '0').replace(/[^0-9.,-]/g, '').replace(/,/g, '');
-                                monto = parseFloat(val) || 0;
-                            }
-                            const cargo = colCargo ? String(row[colCargo] || '').trim() : '';
-                            let desde = colDesde ? parseDate(row[colDesde]) : null;
-                            let hasta = colHasta ? parseDate(row[colHasta]) : null;
-                            if (!desde) desde = new Date().toISOString().slice(0, 10);
-                            if (!hasta) hasta = new Date().toISOString().slice(0, 10);
-                            return { entidad, objeto, monto, cargo, desde, hasta };
-                        }).filter(row => row.entidad || row.objeto);
-
-                        mostrarPreview(importedData);
-                        overlay.querySelector('#btn-import-confirm').disabled = importedData.length === 0;
-                    } catch (err) {
-                        toast('❌ Error al leer el archivo: ' + err.message);
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-            }
-
-            function mostrarPreview(data) {
-                const container = overlay.querySelector('#import-preview');
-                const tableContainer = overlay.querySelector('#import-table-container');
-                const countSpan = overlay.querySelector('#import-count');
-                const statusSpan = overlay.querySelector('#import-status');
-
-                container.style.display = 'block';
-                countSpan.textContent = `📊 ${data.length} registros encontrados`;
-
-                if (data.length === 0) {
-                    tableContainer.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-soft);">No se encontraron datos válidos.</div>';
-                    statusSpan.textContent = '⚠️ Sin datos válidos';
-                    return;
-                }
-
-                let html = '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
-                html += '<thead><tr style="background:var(--primary);color:#fff;">';
-                html += '<th style="padding:6px 8px;text-align:left;">Entidad</th>';
-                html += '<th style="padding:6px 8px;text-align:left;">Objeto</th>';
-                html += '<th style="padding:6px 8px;text-align:right;">Monto</th>';
-                html += '<th style="padding:6px 8px;text-align:left;">Cargo</th>';
-                html += '<th style="padding:6px 8px;text-align:left;">Desde</th>';
-                html += '<th style="padding:6px 8px;text-align:left;">Hasta</th>';
-                html += '</tr></thead><tbody>';
-
-                data.slice(0, 50).forEach(row => {
-                    html += `<tr style="border-bottom:1px solid var(--border);">`;
-                    html += `<td style="padding:4px 8px;">${esc(row.entidad || '—')}</td>`;
-                    html += `<td style="padding:4px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(row.objeto || '—')}</td>`;
-                    html += `<td style="padding:4px 8px;text-align:right;">${row.monto ? bs(row.monto) : '—'}</td>`;
-                    html += `<td style="padding:4px 8px;">${esc(row.cargo || '—')}</td>`;
-                    html += `<td style="padding:4px 8px;">${row.desde ? fmtDate(row.desde) : '—'}</td>`;
-                    html += `<td style="padding:4px 8px;">${row.hasta ? fmtDate(row.hasta) : '—'}</td>`;
-                    html += '</tr>';
-                });
-
-                if (data.length > 50) {
-                    html += `<tr><td colspan="6" style="padding:8px;text-align:center;color:var(--text-soft);">...y ${data.length - 50} registros más</td></tr>`;
-                }
-
-                html += '</tbody></table>';
-                tableContainer.innerHTML = html;
-                statusSpan.textContent = `✅ ${data.length} registros listos para importar`;
-            }
-
-            overlay.querySelector('#btn-import-confirm').onclick = async () => {
-                if (importedData.length === 0) {
-                    toast('No hay datos para importar.');
-                    return;
-                }
-
-                const nuevos = importedData.map(row => ({
-                    id: uid(),
-                    entidad: row.entidad || 'Sin entidad',
-                    objeto: row.objeto || 'Sin descripción',
-                    monto: row.monto || 0,
-                    cargo: row.cargo || 'Sin cargo',
-                    desde: row.desde || new Date().toISOString().slice(0, 10),
-                    hasta: row.hasta || new Date().toISOString().slice(0, 10),
-                    enCurso: false,
-                    certificado: false
-                }));
-
-                S.experiencia = [...S.experiencia, ...nuevos];
-                await saveExperiencia(S.user?.uid);
-
-                closeModal();
-                render();
-                toast(`✅ ${nuevos.length} proyectos importados exitosamente. Total: ${S.experiencia.length} proyectos.`);
             };
         }
 
