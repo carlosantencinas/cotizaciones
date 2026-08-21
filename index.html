@@ -1504,7 +1504,67 @@
             const cots = S.cotizaciones;
             const pagos = S.pagos;
             const exp = S.experiencia;
+// ========== CÁLCULO DE EXPERIENCIA ==========
+function calcularDiasNoSolapados(experiencias) {
+    // Filtrar solo experiencias con certificado
+    const certificadas = experiencias.filter(e => e.certificado === true && e.desde && e.hasta);
+    if (certificadas.length === 0) return { totalDias: 0, years: 0 };
+    
+    // Convertir a objetos Date y ordenar por fecha de inicio
+    const intervalos = certificadas.map(e => ({
+        desde: new Date(e.desde + 'T00:00:00'),
+        hasta: new Date(e.hasta + 'T00:00:00'),
+        enCurso: e.enCurso || false
+    })).filter(i => !isNaN(i.desde) && !isNaN(i.hasta))
+      .sort((a, b) => a.desde - b.desde);
+    
+    if (intervalos.length === 0) return { totalDias: 0, years: 0 };
+    
+    // Fusionar intervalos solapados
+    const fusionados = [];
+    let actual = { ...intervalos[0] };
+    
+    for (let i = 1; i < intervalos.length; i++) {
+        const siguiente = intervalos[i];
+        if (siguiente.desde <= actual.hasta) {
+            // Hay solapamiento, extender el actual si es necesario
+            if (siguiente.hasta > actual.hasta) {
+                actual.hasta = siguiente.hasta;
+            }
+        } else {
+            fusionados.push(actual);
+            actual = { ...siguiente };
+        }
+    }
+    fusionados.push(actual);
+    
+    // Sumar días de cada intervalo fusionado
+    let totalDias = 0;
+    fusionados.forEach(intervalo => {
+        const diff = Math.ceil((intervalo.hasta - intervalo.desde) / (1000 * 60 * 60 * 24));
+        totalDias += Math.max(0, diff);
+    });
+    
+    const years = totalDias / 365.25;
+    return { totalDias, years };
+}
 
+// Calcular experiencia certificada
+const expCertificada = S.experiencia.filter(e => e.certificado === true);
+const { totalDias: totalExpDays, years: yearsExp } = calcularDiasNoSolapados(S.experiencia);
+
+// Calcular postgrados
+const formacionConGrado = S.formacion || [];
+const maestrias = formacionConGrado.filter(f => 
+    f.grado && f.grado.toLowerCase().includes('maestría')
+).length;
+const doctorados = formacionConGrado.filter(f => 
+    f.grado && f.grado.toLowerCase().includes('doctorado')
+).length;
+const especialidades = formacionConGrado.filter(f => 
+    f.grado && f.grado.toLowerCase().includes('especialidad')
+).length;
+const totalPostgrados = formacionConGrado.length;
             const totalCotizado = cots.reduce((s, c) => s + cotTotal(c), 0);
             const totalAceptado = cots.filter(c => c.estado === 'aceptada').reduce((s, c) => s + cotTotal(c), 0);
             const totalCobrado = pagos.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
@@ -1560,6 +1620,20 @@
                     <div class="kpi danger"><div class="label">Pagos sin cotización</div><div class="val">${bs(totalPagosSinCotizacion)}</div><div class="sub">${pagosSinCotizacion.length} registros</div></div>
                 ` : ''}
                 <div class="kpi"><div class="label">Experiencia total</div><div class="val">${bs(totalExperiencia)}</div><div class="sub">${exp.length} proyectos</div></div>
+                `
+<div class="kpi"><div class="label">Años de experiencia</div>
+    <div class="val">${yearsExp.toFixed(1)}</div>
+    <div class="sub">${totalExpDays} días certificados</div>
+</div>
+<div class="kpi success"><div class="label">Días de experiencia</div>
+    <div class="val">${totalExpDays.toLocaleString()}</div>
+    <div class="sub">${S.experiencia.filter(e => e.certificado).length} proyectos con certificado</div>
+</div>
+<div class="kpi accent"><div class="label">Postgrados</div>
+    <div class="val">${totalPostgrados}</div>
+    <div class="sub">${maestrias > 0 ? `🎓 ${maestrias} Maestría(s)` : 'Sin maestrías'}</div>
+</div>
+`
             </div>
 
             <div class="dash-grid-2">
