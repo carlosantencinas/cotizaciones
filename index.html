@@ -1500,140 +1500,94 @@
         // ============================================================
         // VIEWS - DASHBOARD
         // ============================================================
-        function viewDashboard() {
-            const cots = S.cotizaciones;
-            const pagos = S.pagos;
-            const exp = S.experiencia;
-// ========== CÁLCULO DE EXPERIENCIA ==========
-function calcularDiasNoSolapados(experiencias) {
-    // Filtrar solo experiencias con certificado
-    const certificadas = experiencias.filter(e => e.certificado === true && e.desde && e.hasta);
-    if (certificadas.length === 0) return { totalDias: 0, years: 0 };
-    
-    // Convertir a objetos Date y ordenar por fecha de inicio
-    const intervalos = certificadas.map(e => ({
-        desde: new Date(e.desde + 'T00:00:00'),
-        hasta: new Date(e.hasta + 'T00:00:00'),
-        enCurso: e.enCurso || false
-    })).filter(i => !isNaN(i.desde) && !isNaN(i.hasta))
-      .sort((a, b) => a.desde - b.desde);
-    
-    if (intervalos.length === 0) return { totalDias: 0, years: 0 };
-    
-    // Fusionar intervalos solapados
-    const fusionados = [];
-    let actual = { ...intervalos[0] };
-    
-    for (let i = 1; i < intervalos.length; i++) {
-        const siguiente = intervalos[i];
-        if (siguiente.desde <= actual.hasta) {
-            // Hay solapamiento, extender el actual si es necesario
-            if (siguiente.hasta > actual.hasta) {
-                actual.hasta = siguiente.hasta;
+  function viewDashboard() {
+    const cots = S.cotizaciones;
+    const pagos = S.pagos;
+    const exp = S.experiencia;
+
+    // ========== NUEVO: CÁLCULO DE EXPERIENCIA ==========
+    function calcularDiasNoSolapados(experiencias) {
+        const certificadas = experiencias.filter(e => e.certificado === true && e.desde && e.hasta);
+        if (certificadas.length === 0) return { totalDias: 0, years: 0 };
+        
+        const intervalos = certificadas.map(e => ({
+            desde: new Date(e.desde + 'T00:00:00'),
+            hasta: new Date(e.hasta + 'T00:00:00'),
+            enCurso: e.enCurso || false
+        })).filter(i => !isNaN(i.desde) && !isNaN(i.hasta))
+          .sort((a, b) => a.desde - b.desde);
+        
+        if (intervalos.length === 0) return { totalDias: 0, years: 0 };
+        
+        const fusionados = [];
+        let actual = { ...intervalos[0] };
+        
+        for (let i = 1; i < intervalos.length; i++) {
+            const siguiente = intervalos[i];
+            if (siguiente.desde <= actual.hasta) {
+                if (siguiente.hasta > actual.hasta) {
+                    actual.hasta = siguiente.hasta;
+                }
+            } else {
+                fusionados.push(actual);
+                actual = { ...siguiente };
             }
-        } else {
-            fusionados.push(actual);
-            actual = { ...siguiente };
         }
+        fusionados.push(actual);
+        
+        let totalDias = 0;
+        fusionados.forEach(intervalo => {
+            const diff = Math.ceil((intervalo.hasta - intervalo.desde) / (1000 * 60 * 60 * 24));
+            totalDias += Math.max(0, diff);
+        });
+        
+        const years = totalDias / 365.25;
+        return { totalDias, years };
     }
-    fusionados.push(actual);
+
+    const { totalDias: totalExpDays, years: yearsExp } = calcularDiasNoSolapados(S.experiencia);
     
-    // Sumar días de cada intervalo fusionado
-    let totalDias = 0;
-    fusionados.forEach(intervalo => {
-        const diff = Math.ceil((intervalo.hasta - intervalo.desde) / (1000 * 60 * 60 * 24));
-        totalDias += Math.max(0, diff);
-    });
-    
-    const years = totalDias / 365.25;
-    return { totalDias, years };
+    const formacionConGrado = S.formacion || [];
+    const maestrias = formacionConGrado.filter(f => f.grado && f.grado.toLowerCase().includes('maestría')).length;
+    const totalPostgrados = formacionConGrado.length;
+    // ========== FIN NUEVO CÁLCULO ==========
+
+    const totalCotizado = cots.reduce((s, c) => s + cotTotal(c), 0);
+    // ... resto de variables existentes
+
+    // KPI grid con los nuevos indicadores
+    return `
+    <div class="page-head">
+        ...
+    </div>
+
+    <div class="kpi-grid">
+        <!-- KPI existentes -->
+        <div class="kpi"><div class="label">Total cotizado</div><div class="val">${bs(totalCotizado)}</div><div class="sub">${cots.length} cotizaciones</div></div>
+        <div class="kpi success"><div class="label">Total aceptado</div><div class="val">${bs(totalAceptado)}</div><div class="sub">${cotizacionesAceptadas.length} aceptadas</div></div>
+        <div class="kpi accent"><div class="label">Cobrado a la fecha</div><div class="val">${bs(totalCobrado)}</div><div class="sub">${pagos.length} registros</div></div>
+        <div class="kpi danger"><div class="label">Por cobrar (con cotización)</div><div class="val">${bs(totalPorCobrar)}</div><div class="sub">${avancePagos.length} pendientes</div></div>
+        
+        <!-- NUEVOS KPI -->
+        <div class="kpi"><div class="label">Años de experiencia</div>
+            <div class="val">${yearsExp.toFixed(1)}</div>
+            <div class="sub">${totalExpDays.toLocaleString()} días certificados</div>
+        </div>
+        <div class="kpi success"><div class="label">Días de experiencia</div>
+            <div class="val">${totalExpDays.toLocaleString()}</div>
+            <div class="sub">${S.experiencia.filter(e => e.certificado).length} proyectos con certificado</div>
+        </div>
+        <div class="kpi accent"><div class="label">Postgrados</div>
+            <div class="val">${totalPostgrados}</div>
+            <div class="sub">${maestrias > 0 ? `🎓 ${maestrias} Maestría(s)` : 'Sin maestrías'}</div>
+        </div>
+        
+        <div class="kpi"><div class="label">Experiencia total</div><div class="val">${bs(totalExperiencia)}</div><div class="sub">${exp.length} proyectos</div></div>
+    </div>
+    // ... resto del dashboard
+    `;
 }
 
-// Calcular experiencia certificada
-const expCertificada = S.experiencia.filter(e => e.certificado === true);
-const { totalDias: totalExpDays, years: yearsExp } = calcularDiasNoSolapados(S.experiencia);
-
-// Calcular postgrados
-const formacionConGrado = S.formacion || [];
-const maestrias = formacionConGrado.filter(f => 
-    f.grado && f.grado.toLowerCase().includes('maestría')
-).length;
-const doctorados = formacionConGrado.filter(f => 
-    f.grado && f.grado.toLowerCase().includes('doctorado')
-).length;
-const especialidades = formacionConGrado.filter(f => 
-    f.grado && f.grado.toLowerCase().includes('especialidad')
-).length;
-const totalPostgrados = formacionConGrado.length;
-            const totalCotizado = cots.reduce((s, c) => s + cotTotal(c), 0);
-            const totalAceptado = cots.filter(c => c.estado === 'aceptada').reduce((s, c) => s + cotTotal(c), 0);
-            const totalCobrado = pagos.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
-            const totalPorCobrar = pagos.reduce((s, p) => s + Math.max(0, Number(p.monto) - Number(p.montoPagado || 0)), 0);
-            const totalExperiencia = exp.reduce((s, e) => s + Number(e.monto || 0), 0);
-            const edad = calcularEdad(S.datosPersonales.fechaNacimiento);
-
-            const pagosSinCotizacion = pagos.filter(p => !p.cotizacionId || !cots.some(c => c.id === p.cotizacionId));
-            const totalPagosSinCotizacion = pagosSinCotizacion.reduce((s, p) => s + Math.max(0, Number(p.monto) - Number(p.montoPagado || 0)), 0);
-
-            const cotizacionesAceptadas = cots.filter(c => c.estado === 'aceptada');
-            const avancePagos = cotizacionesAceptadas.map(c => {
-                const montoTotal = cotTotal(c);
-                const pagosRelacionados = pagos.filter(p => p.cotizacionId === c.id);
-                const totalPagado = pagosRelacionados.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
-                const porcentaje = montoTotal > 0 ? (totalPagado / montoTotal) * 100 : 0;
-                const saldoPendiente = montoTotal - totalPagado;
-                return {
-                    ...c,
-                    montoTotal,
-                    totalPagado,
-                    saldoPendiente,
-                    porcentaje: Math.min(100, porcentaje),
-                    pagos: pagosRelacionados,
-                    estaPagado: saldoPendiente <= 0.01
-                };
-            }).filter(item => !item.estaPagado);
-
-            const colores = ['#1A4A5C', '#3A7A8F', '#B8862E', '#27AE60', '#C0392B', '#8E44AD'];
-            const porCargo = {};
-            exp.forEach(e => { porCargo[e.cargo] = (porCargo[e.cargo] || 0) + Number(e.monto || 0); });
-            const topCargos = Object.entries(porCargo).sort((a, b) => b[1] - a[1]).slice(0, 8);
-            const maxCargo = Math.max(1, ...topCargos.map(x => x[1]));
-
-            const porEntidad = {};
-            exp.forEach(e => { porEntidad[e.entidad] = (porEntidad[e.entidad] || 0) + Number(e.monto || 0); });
-            const topEntidades = Object.entries(porEntidad).sort((a, b) => b[1] - a[1]).slice(0, 8);
-            const maxEntidad = Math.max(1, ...topEntidades.map(x => x[1]));
-
-            const ultimasAceptadas = cots.filter(c => c.estado === 'aceptada').sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')).slice(0, 3);
-
-            return `
-            <div class="page-head">
-                <div><p class="eyebrow">Panel general</p><h1>Dashboard</h1><p>Resumen de cotizaciones, cobros y experiencia profesional.</p></div>
-            </div>
-
-            <div class="kpi-grid">
-                <div class="kpi"><div class="label">Total cotizado</div><div class="val">${bs(totalCotizado)}</div><div class="sub">${cots.length} cotizaciones</div></div>
-                <div class="kpi success"><div class="label">Total aceptado</div><div class="val">${bs(totalAceptado)}</div><div class="sub">${cotizacionesAceptadas.length} aceptadas</div></div>
-                <div class="kpi accent"><div class="label">Cobrado a la fecha</div><div class="val">${bs(totalCobrado)}</div><div class="sub">${pagos.length} registros</div></div>
-                <div class="kpi danger"><div class="label">Por cobrar (con cotización)</div><div class="val">${bs(totalPorCobrar)}</div><div class="sub">${avancePagos.length} pendientes</div></div>
-                ${pagosSinCotizacion.length ? `
-                    <div class="kpi danger"><div class="label">Pagos sin cotización</div><div class="val">${bs(totalPagosSinCotizacion)}</div><div class="sub">${pagosSinCotizacion.length} registros</div></div>
-                ` : ''}
-                <div class="kpi"><div class="label">Experiencia total</div><div class="val">${bs(totalExperiencia)}</div><div class="sub">${exp.length} proyectos</div></div>
-                `
-<div class="kpi"><div class="label">Años de experiencia</div>
-    <div class="val">${yearsExp.toFixed(1)}</div>
-    <div class="sub">${totalExpDays} días certificados</div>
-</div>
-<div class="kpi success"><div class="label">Días de experiencia</div>
-    <div class="val">${totalExpDays.toLocaleString()}</div>
-    <div class="sub">${S.experiencia.filter(e => e.certificado).length} proyectos con certificado</div>
-</div>
-<div class="kpi accent"><div class="label">Postgrados</div>
-    <div class="val">${totalPostgrados}</div>
-    <div class="sub">${maestrias > 0 ? `🎓 ${maestrias} Maestría(s)` : 'Sin maestrías'}</div>
-</div>
-`
             </div>
 
             <div class="dash-grid-2">
