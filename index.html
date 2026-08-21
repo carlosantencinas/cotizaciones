@@ -1552,9 +1552,7 @@
     const totalPostgrados = formacionConGrado.length;
     // ========== FIN NUEVO CÁLCULO ==========
 
-    const totalCotizado = cots.reduce((s, c) => s + cotTotal(c), 0);
-            
-            
+           
             const totalCotizado = cots.reduce((s, c) => s + cotTotal(c), 0);
             const totalAceptado = cots.filter(c => c.estado === 'aceptada').reduce((s, c) => s + cotTotal(c), 0);
             const totalCobrado = pagos.reduce((s, p) => s + Number(p.montoPagado || 0), 0);
